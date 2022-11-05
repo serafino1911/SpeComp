@@ -13,10 +13,9 @@ Project Organization
     ├── bin
     ├── config
     ├── data
-    │   ├── external
-    │   ├── interim
-    │   ├── processed
-    │   └── raw
+    │   ├── DB
+    │   ├── Unknown
+    │   └── Results
     ├── docs
     ├── notebooks
     ├── reports
