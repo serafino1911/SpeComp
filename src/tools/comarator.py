@@ -1,98 +1,28 @@
-import numpy as np
-import os
-import scipy.signal
-import scipy.interpolate
-import math as m
+from modules.importer import *
+from modules.basic_functions import *
 
-def load_data(path):
-    with open(path, 'r') as f:
-        data = f.readlines()
-        data = [line.split() for line in data]
-        x = [float(line[0]) for line in data]
-        y = [float(line[1]) for line in data]
-    return x, y
-
-def clear_y(y_test):
-    k = np.min(y_test)
-    y_test = [y-k for y in y_test]
-    return y_test
-
-def select_intervall(x_1, y_1, x_2, y_2):
-    if len(x_1) != len(y_1) or len(x_2) != len(y_2):
-        return 0
-    # find same intervall
-    x_min = max(x_1[0], x_2[0])
-    x_max = min(x_1[-1], x_2[-1])
-    i_min = next((i for i in range(len(x_1)) if x_1[i] >= x_min), 0)
-    for i in range(len(x_2)):
-        if x_2[i] >= x_min:
-            i_min = i
-            break
-    i_max = next((i for i in range(len(x_1)) if x_1[i] >= x_max), 0)
-    for i in range(len(x_2)):
-        if x_2[i] >= x_max:
-            i_max = i
-            break
-    # cut
-    x_1 = x_1[i_min:i_max]
-    y_1 = y_1[i_min:i_max]
-    x_2 = x_2[i_min:i_max]
-    y_2 = y_2[i_min:i_max]
-    return x_1, y_1, x_2, y_2
-
-def same_x_projection(x_1, y_1, x_2, y_2, deltaspace = 2):
-    min_delta_x1 = min(x_1[i+1]-x_1[i] for i in range(len(x_1)-1))
-    min_delta_x2 = min(x_2[i+1]-x_2[i] for i in range(len(x_2)-1))
-    min_delta_x = min(min_delta_x1, min_delta_x2)
-    new_x_1 = np.arange(x_1[0], x_1[-1], min_delta_x/deltaspace)
-    new_x_2 = np.arange(x_2[0], x_2[-1], min_delta_x/deltaspace)
-    y_1 = np.interp(new_x_1, x_1, y_1)
-    y_2 = np.interp(new_x_2, x_2, y_2)
-    f = scipy.interpolate.interp1d(new_x_1, y_1, fill_value="extrapolate")
-    y_1 = f(new_x_2)
-    return y_1, y_2, new_x_1, new_x_2
-
-def pre_elaboration(x_1_i : list, y_1_i : list, x_2_i : list, y_2_i : list, divdelta : float = 1):
-    x_1, y_1, x_2, y_2 = select_intervall(x_1_i, y_1_i, x_2_i, y_2_i)
-    y_1 = clear_y(y_1)
-    y_2 = clear_y(y_2)
-    y_1, y_2, x_1, x_2 = same_x_projection(x_1, y_1, x_2, y_2, divdelta)
-    return x_1, y_1, x_2, y_2
+BASE_DIR = 'data\\DB'
 
 def convolution(y_1 : list,y_2 : list):
-    #corr = np.correlate(y_1, y_2, mode='same')
     conv = np.convolve(y_1, y_2, mode='same')
-    return np.max(conv) #np.trapz(corr)
+    return np.max(conv)
 
 def compare_HQI(y_1 : list, y_2 : list):
-    # x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
-    # y_1 = clear_y(y_1)
-    # y_2 = clear_y(y_2)
-    # y_1, y_2, x_1, x_2  = same_x_projection(x_1, y_1, x_2, y_2, 4)
+    # sourcery skip: inline-immediately-returned-variable
     hqi = round((m.pow(np.dot(y_2,y_1),2))/(np.dot(y_2,y_2)*np.dot(y_1,y_1)),2)
     return hqi
 
-def compare_timeseries_correlation(y_1 : list, y_2 : list):
+def fft_convolution(y_1 : list, y_2 : list):
     # fast convolution
     conv = scipy.signal.fftconvolve(y_1, y_2[::-1], mode='same')
     return np.max(np.abs(conv))
 
 def norm_correlation(y_1 : list, y_2 : list):
-    # x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
-    # #resample to same length
-    # y_1 = clear_y(y_1)
-    # y_2 = clear_y(y_2)
-    # y_1, y_2, x_1, x_2  = same_x_projection(x_1, y_1, x_2, y_2, 4)    
-    #normalize
-    y_1 = y_1/np.max(y_1)
-    y_2 = y_2/np.max(y_2)
+    y_1 /= np.max(y_1)
+    y_2 /= np.max(y_2)
     return np.corrcoef(y_1, y_2)[0, 1]
 
 def discrete_correlation(y_1 : list, y_2 : list):
-    # x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
-    # y_1 = clear_y(y_1)
-    # y_2 = clear_y(y_2)
-    # y_1, y_2, x_1, x_2  = same_x_projection(x_1, y_1, x_2, y_2, 4)
     corr = np.corrcoef(y_1, y_2)[0,1]
     return np.abs(corr)
 
@@ -100,98 +30,166 @@ def another_correlation(y_1 : list, y_2 : list): #to define
     corr = np.correlate(y_1, y_2, mode='same')
     return np.trapz(corr)
 
+def difference(y_1 : list, y_2 : list):
+    y_1 /= np.max(y_1)
+    y_2 /= np.max(y_2)
+    diff = np.sum(np.abs([x-y for x,y in zip(y_1, y_2)]))
+    return(np.abs(diff)/len(y_1))
+
+def find_peaks(y_1 : list, y_2 : list):
+    peaks_1 = scipy.signal.find_peaks(y_1, height=0.5, distance=10)
+    peaks_2 = scipy.signal.find_peaks(y_2, height=0.5, distance=10)
+    #indexis peaks
+    peaks_1_indexs = peaks_1[0]
+    peaks_2_indexs = peaks_2[0]
+    #valori peaks
+    peaks_1_val = [y_1[i] for i in peaks_1]
+    peaks_2_val = [y_2[i] for i in peaks_2]
+    #distanze tra i picchi
+    peaks_1_dist = [peaks_1[i+1]-peaks_1[i] for i in range(len(peaks_1)-1)]
+    peaks_2_dist = [peaks_2[i+1]-peaks_2[i] for i in range(len(peaks_2)-1)]
+    #picchi più vicini tra i due
+    peaks_b = [peaks_1[i] for i in range(len(peaks_1)) if peaks_1[i] in peaks_2]
+
 def compare(path1, file_list):
     result_norm = []
     result_discr = []
     result_conv = []
     result_HQI = []
-    result_timese = []
+    result_fftconv = []
+    result_another = []
+    result_diff = []
 
     x_u_i, y_u_i = load_data(path1)
     for file in file_list:
         x2, y2 = load_data(file)
-        x_u, y_u, x2, y2 = pre_elaboration(x_u_i, y_u_i, x2, y2, 2)
+        x_u, y_u, x2, y2 = pre_elaboration(x_u_i, y_u_i, x2, y2, 1)
         corr_norm = norm_correlation(y_u, y2) 
         corr_conv = convolution(y_u, y2) 
         corr_HQI = compare_HQI(y_u, y2)
         corr_discr = discrete_correlation(y_u, y2)
-        corr_timese = compare_timeseries_correlation(y_u, y2) #fft convolution
-        result_norm.append((file, corr_norm))
-        result_conv.append((file, corr_conv))
-        result_HQI.append((file, corr_HQI))
-        result_discr.append((file, corr_discr))
-        result_timese.append((file, corr_timese))
+        corr_fftconv = fft_convolution(y_u, y2) #fft convolution
+        corr_another = another_correlation(y_u, y2)
+        corr_diff = difference(y_u, y2)
+        result_norm.append((file, round(corr_norm,3)))
+        result_conv.append((file, round(corr_conv,3)))
+        result_HQI.append((file, round(corr_HQI,3)))
+        result_discr.append((file, round(corr_discr,3)))
+        result_fftconv.append((file, round(corr_fftconv,3)))
+        result_another.append((file, round(corr_another,3)))
+        result_diff.append((file, round(corr_diff,3)))
     #sort by correlation
     result_norm.sort(key=lambda x: x[1], reverse=True)
     result_conv.sort(key=lambda x: x[1], reverse=True)
     result_HQI.sort(key=lambda x: x[1], reverse=True)
     result_discr.sort(key=lambda x: x[1], reverse=True)
-    result_timese.sort(key=lambda x: x[1], reverse=True)
-    return result_norm, result_conv, result_HQI, result_discr, result_timese
+    result_fftconv.sort(key=lambda x: x[1], reverse=True)
+    result_another.sort(key=lambda x: x[1], reverse=True)
+    result_diff.sort(key = lambda x : x[1], reverse=False)
+    return result_norm, result_conv, result_HQI, result_discr, result_fftconv, result_another, result_diff
+
+def main(unknown : str):    
+    file_list = database_files(BASE_DIR)
+    result_norm, result_conv, result_HQI, result_discr, result_fftconv, result_another, result_diff  = compare(unknown,file_list)
+    print('NORM: ', result_norm[:5])
+    print('CONV: ', result_conv[:5])
+    print('HQI: ', result_HQI[:5])
+    print('DISCR: ', result_discr[:5])
+    print('FFT CONV: ', result_fftconv[:5])
+    print('ANOTHER: ', result_another[:5])
+    print('DIFF: ', result_diff[:5])
 
 
-BASE_DIR = 'data\\DB'
-unknown = 'data\\Unknown\\EXE.txt'
-file_list = []
-for root, dirs, files in os.walk(BASE_DIR):
-    file_list.extend(os.path.join(root, file) for file in files if file.endswith('.txt'))
+    #take first and plot it
+    
+    x_u, y_u = load_data(unknown)
+    x_norm, y_norm = load_data(result_norm[0][0])
+    x_conv, y_conv = load_data(result_conv[0][0])
+    x_HQI, y_HQI = load_data(result_HQI[0][0])
+    x_discr, y_discr = load_data(result_discr[0][0])
+    x_fftconv, y_fftconv = load_data(result_fftconv[0][0])
+    x_another, y_another = load_data(result_another[0][0])
+    x_diff, y_diff = load_data(result_diff[0][0])
+    name_norm = result_norm[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
+    name_conv = result_conv[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
+    name_HQI = result_HQI[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
+    name_discr = result_discr[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
+    name_fftconv = result_fftconv[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
+    name_another = result_another[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
+    name_diff = result_diff[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
 
-result_norm, result_conv, result_HQI, result_discr, result_timese = compare(unknown,file_list)
-print('NORM: ', result_norm[:5])
-print('CONV: ', result_conv[:5])
-print('HQI: ', result_HQI[:5])
-print('DISCR: ', result_discr[:5])
-print('FFT CONV: ', result_timese[:5])
+    # normalize data
+    u = np.min(y_u)
+    y_u = [y-u for y in y_u]
+    y_u /= np.max(y_u)
 
-#take first and plot it
-import matplotlib.pyplot as plt
-x_u, y_u = load_data(unknown)
-x_ultra, y_ultra = load_data(result_norm[0][0])
-x_conv, y_conv = load_data(result_conv[0][0])
-x_HQI, y_HQI = load_data(result_HQI[0][0])
-x_discr, y_discr = load_data(result_discr[0][0])
-x_timese, y_timese = load_data(result_timese[0][0])
-name_ultra = result_norm[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
-name_conv = result_conv[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
-name_HQI = result_HQI[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
-name_discr = result_discr[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
-name_timese = result_timese[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
+    u = np.min(y_norm)
+    y_norm = [y-u for y in y_norm]
+    y_norm /= np.max(y_norm)
 
-# normalize data
-u = np.min(y_u)
-y_u = [y-u for y in y_u]
-y_u = y_u/np.max(y_u)
+    u = np.min(y_conv)
+    y_conv = [y-u for y in y_conv]
+    y_conv /= np.max(y_conv)
 
-u = np.min(y_ultra)
-y_ultra = [y-u for y in y_ultra]
-y_ultra = y_ultra/np.max(y_ultra)
+    u = np.min(y_HQI)
+    y_HQI = [y-u for y in y_HQI]
+    y_HQI /= np.max(y_HQI)
 
-u = np.min(y_conv)
-y_conv = [y-u for y in y_conv]
-y_conv = y_conv/np.max(y_conv)
+    u = np.min(y_discr)
+    y_discr = [y-u for y in y_discr]
+    y_discr /= np.max(y_discr)
 
-u = np.min(y_HQI)
-y_HQI = [y-u for y in y_HQI]
-y_HQI = y_HQI/np.max(y_HQI)
+    u = np.min(y_fftconv)
+    y_fftconv = [y-u for y in y_fftconv]
+    y_fftconv /= np.max(y_fftconv)
 
-u = np.min(y_discr)
-y_discr = [y-u for y in y_discr]
-y_discr = y_discr/np.max(y_discr)
+    u = np.min(y_another)
+    y_another = [y-u for y in y_another]
+    y_another /= np.max(y_another)
 
-u = np.min(y_timese)
-y_timese = [y-u for y in y_timese]
-y_timese = y_timese/np.max(y_timese)
+    u = np.min(y_diff)
+    y_diff = [y-u for y in y_diff]
+    y_diff /= np.max(y_diff)
 
-plt.plot(x_u, y_u, label='unknown')
-plt.plot(x_ultra, y_ultra, label=f'ultra {name_ultra}')
-plt.plot(x_conv, y_conv, label=f'conv {name_conv}')
-plt.plot(x_HQI, y_HQI, label=f'HQI {name_HQI}')
-plt.plot(x_discr, y_discr, label=f'discr {name_discr}')
-plt.plot(x_timese, y_timese, label=f'timese {name_timese}')
+    # plot as subplots
+    fig, axs = plt.subplots(4, 2, figsize=(15, 15))
+    axs[0,0].plot(x_u, y_u, label='unknown')
+    axs[0,0].plot(x_norm, y_norm, label=name_norm)
+    axs[0,0].set_title('norm')
+    axs[0,0].legend()
+    axs[0,1].plot(x_u, y_u, label='unknown')
+    axs[0,1].plot(x_conv, y_conv, label=name_conv)
+    axs[0,1].set_title('conv')
+    axs[0,1].legend()
+    axs[1,0].plot(x_u, y_u, label='unknown')
+    axs[1,0].plot(x_HQI, y_HQI, label=name_HQI)
+    axs[1,0].set_title('HQI')
+    axs[1,0].legend()
+    axs[1,1].plot(x_u, y_u, label='unknown')
+    axs[1,1].plot(x_discr, y_discr, label=name_discr)
+    axs[1,1].set_title('discr')
+    axs[1,1].legend()
+    axs[2,0].plot(x_u, y_u, label='unknown')
+    axs[2,0].plot(x_fftconv, y_fftconv, label=name_fftconv)
+    axs[2,0].set_title('fftconv')
+    axs[2,0].legend()
+    axs[2,1].plot(x_u, y_u, label='unknown')
+    axs[2,1].plot(x_another, y_another, label=name_another)
+    axs[2,1].set_title('another')
+    axs[2,1].legend()
+    axs[3,0].plot(x_u, y_u, label='unknown')
+    axs[3,0].plot(x_diff, y_diff, label=name_diff)
+    axs[3,0].set_title('diff')
+    axs[3,0].legend()
+    plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+    name_file = unknown.split('\\')[-1].replace('.txt', '').replace(' ', '')
+    plt.savefig(f'reports\\figures\\result_delta1_{name_file}.png', dpi=300)
+    #close
+    plt.close()
 
-plt.legend()
-plt.show()
-
-
-
-
+if __name__ == '__main__':
+    import glob
+    unknown_list = glob.glob('data\\unknown\\*.txt')
+    #unknown = 'data\\Unknown\\EXE.txt'
+    for unknown in unknown_list:
+        main(unknown)

@@ -10,19 +10,14 @@ Project Organization
     ├── AUTHORS.md
     ├── LICENSE
     ├── README.md
-    ├── bin
-    ├── config
     ├── data
     │   ├── DB
     │   ├── Unknown
     │   └── Results
-    ├── docs
-    ├── notebooks
     ├── reports
     │   └── figures
     └── src
-        ├── data
         ├── external
-        ├── models
         ├── tools
-        └── visualization
+            └── modules
+
