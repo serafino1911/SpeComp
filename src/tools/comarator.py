@@ -96,6 +96,10 @@ def discrete_correlation(y_1 : list, y_2 : list):
     corr = np.corrcoef(y_1, y_2)[0,1]
     return np.abs(corr)
 
+def another_correlation(y_1 : list, y_2 : list): #to define
+    corr = np.correlate(y_1, y_2, mode='same')
+    return np.trapz(corr)
+
 def compare(path1, file_list):
     result_norm = []
     result_discr = []
