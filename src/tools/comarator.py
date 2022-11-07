@@ -2,6 +2,7 @@ import numpy as np
 import os
 import scipy
 import scipy.interpolate
+import math as m
 
 def load_data(path):
     with open(path, 'r') as f:
@@ -39,18 +40,35 @@ def select_intervall(x_1, y_1, x_2, y_2):
     y_2 = y_2[i_min:i_max]
     return x_1, y_1, x_2, y_2
 
-def compare_timeseries_integral(x_1 : list, y_1 : list, x_2 : list, y_2 : list):
+def same_x_projection(x_1, y_1, x_2, y_2, deltaspace = 2):
+    min_delta_x1 = min(x_1[i+1]-x_1[i] for i in range(len(x_1)-1))
+    min_delta_x2 = min(x_2[i+1]-x_2[i] for i in range(len(x_2)-1))
+    min_delta_x = min(min_delta_x1, min_delta_x2)
+    new_x_1 = np.arange(x_1[0], x_1[-1], min_delta_x/deltaspace)
+    new_x_2 = np.arange(x_2[0], x_2[-1], min_delta_x/deltaspace)
+    y_1 = np.interp(new_x_1, x_1, y_1)
+    y_2 = np.interp(new_x_2, x_2, y_2)
+    return y_1,y_2, new_x_1, new_x_2
+
+def convolution(x_1 : list, y_1 : list, x_2 : list, y_2 : list):
     x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
     y_1 = clear_y(y_1)
     y_2 = clear_y(y_2)
-
-
+    y_1, y_2, x_1, x_2 = same_x_projection(x_1, y_1, x_2, y_2, 1)
     f = scipy.interpolate.interp1d(x_1, y_1, fill_value="extrapolate")
     y_1 = f(x_2)
-
     corr = np.correlate(y_1, y_2, mode='same')
     return np.trapz(corr)
 
+def compare_HQI(x_1 : list, y_1 : list, x_2 : list, y_2 : list):
+    x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
+    y_1 = clear_y(y_1)
+    y_2 = clear_y(y_2)
+    y_1, y_2, x_1, x_2  = same_x_projection(x_1, y_1, x_2, y_2, 4)
+    f = scipy.interpolate.interp1d(x_1, y_1, fill_value="extrapolate")
+    y_1 = f(x_2)
+    hqi = round((m.pow(np.dot(y_2,y_1),2))/(np.dot(y_2,y_2)*np.dot(y_1,y_1)),2)
+    return hqi
 
 def compare_timeseries_correlation(x_1 : list, y_1 : list, x_2 : list, y_2 : list):
     x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
@@ -58,64 +76,122 @@ def compare_timeseries_correlation(x_1 : list, y_1 : list, x_2 : list, y_2 : lis
     y_1 = clear_y(y_1)
     y_2 = clear_y(y_2)
     y_1 = np.linspace(y_1[0], y_1[-1], len(y_2))
+
+    #y_1 = np.interp(y_base, y_1, y_2)
     return np.corrcoef(y_1, y_2)[0, 1]
 
-def ultra_compare_timeseries_correlation(x_1 : list, y_1 : list, x_2 : list, y_2 : list):
+def norm_correlation(x_1 : list, y_1 : list, x_2 : list, y_2 : list):
     x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
     #resample to same length
     y_1 = clear_y(y_1)
     y_2 = clear_y(y_2)
-    min_delta_x1 = min(x_1[i+1]-x_1[i] for i in range(len(x_1)-1))
-    min_delta_x2 = min(x_2[i+1]-x_2[i] for i in range(len(x_2)-1))
-    min_delta_x = min(min_delta_x1, min_delta_x2)
-    new_x_1 = np.arange(x_1[0], x_1[-1], min_delta_x/2)
-    new_x_2 = np.arange(x_2[0], x_2[-1], min_delta_x/2)
-    y_1 = np.interp(new_x_1, x_1, y_1)
-    y_2 = np.interp(new_x_2, x_2, y_2)
-
-    f = scipy.interpolate.interp1d(new_x_1, y_1, fill_value="extrapolate")
-    y_1 = f(new_x_2)
+    y_1, y_2, x_1, x_2  = same_x_projection(x_1, y_1, x_2, y_2, 4)    
+    #normalize
+    y_1 = y_1/np.max(y_1)
+    y_2 = y_2/np.max(y_2)
+    f = scipy.interpolate.interp1d(x_1, y_1, fill_value="extrapolate")
+    y_1 = f(x_2)
     return np.corrcoef(y_1, y_2)[0, 1]
 
 def discrete_correlation(x_1 : list, y_1 : list, x_2 : list, y_2 : list):
     x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
     y_1 = clear_y(y_1)
     y_2 = clear_y(y_2)
+    y_1, y_2, x_1, x_2  = same_x_projection(x_1, y_1, x_2, y_2, 4)
     f = scipy.interpolate.interp1d(x_1, y_1, fill_value="extrapolate")
     y_1 = f(x_2)
     corr = np.corrcoef(y_1, y_2)[0,1]
     return np.abs(corr)
 
-
 def compare(path1, file_list):
-    file_results = []
+    result_norm = []
+    result_discr = []
+    result_conv = []
+    result_HQI = []
+    result_timese = []
+
     x_u, y_u = load_data(path1)
     for file in file_list:
         x2, y2 = load_data(file)
-        corr = ultra_compare_timeseries_correlation(x_u, y_u, x2, y2)
-        #corr = discrete_correlation(x_u, y_u, x2, y2)
-        #corr = compare_timeseries_correlation(x_u, y_u, x2, y2)
-        #corr = compare_timeseries_integral(x_u, y_u, x2, y2)
-        file_results.append((file, corr))
+        corr_norm = norm_correlation(x_u, y_u, x2, y2) #DISCARDED
+        corr_conv = convolution(x_u, y_u, x2, y2) #DISCARDED
+        corr_HQI = compare_HQI(x_u, y_u, x2, y2)
+        corr_discr = discrete_correlation(x_u, y_u, x2, y2)
+        corr_timese = compare_timeseries_correlation(x_u, y_u, x2, y2) #NON HA SENSO LO SPAZIO COMUNE
+        result_norm.append((file, corr_norm))
+        result_conv.append((file, corr_conv))
+        result_HQI.append((file, corr_HQI))
+        result_discr.append((file, corr_discr))
+        result_timese.append((file, corr_timese))
     #sort by correlation
-    file_results.sort(key=lambda x: x[1], reverse=True)
-    return file_results
+    result_norm.sort(key=lambda x: x[1], reverse=True)
+    result_conv.sort(key=lambda x: x[1], reverse=True)
+    result_HQI.sort(key=lambda x: x[1], reverse=True)
+    result_discr.sort(key=lambda x: x[1], reverse=True)
+    result_timese.sort(key=lambda x: x[1], reverse=True)
+
+    return result_norm, result_conv, result_HQI, result_discr, result_timese
 
 
 BASE_DIR = 'data\\DB'
-unknown = 'data\\Unknown\\fb3.txt'
+unknown = 'data\\Unknown\\EXE.txt'
 file_list = []
 for root, dirs, files in os.walk(BASE_DIR):
     file_list.extend(os.path.join(root, file) for file in files if file.endswith('.txt'))
 
-results = compare(unknown,file_list)
-print(results[:5])
+result_norm, result_conv, result_HQI, result_discr, result_timese = compare(unknown,file_list)
+print('NORM: ', result_norm[:5])
+print('CONV: ', result_conv[:5])
+print('HQI: ', result_HQI[:5])
+print('DISCR: ', result_discr[:5])
+print('TIMESE: ', result_timese[:5])
+
 #take first and plot it
 import matplotlib.pyplot as plt
 x_u, y_u = load_data(unknown)
-x2, y2 = load_data(results[0][0])
+x_ultra, y_ultra = load_data(result_norm[0][0])
+x_conv, y_conv = load_data(result_conv[0][0])
+x_HQI, y_HQI = load_data(result_HQI[0][0])
+x_discr, y_discr = load_data(result_discr[0][0])
+x_timese, y_timese = load_data(result_timese[0][0])
+name_ultra = result_norm[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
+name_conv = result_conv[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
+name_HQI = result_HQI[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
+name_discr = result_discr[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
+name_timese = result_timese[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
+
+# normalize data
+u = np.min(y_u)
+y_u = [y-u for y in y_u]
+y_u = y_u/np.max(y_u)
+
+u = np.min(y_ultra)
+y_ultra = [y-u for y in y_ultra]
+y_ultra = y_ultra/np.max(y_ultra)
+
+u = np.min(y_conv)
+y_conv = [y-u for y in y_conv]
+y_conv = y_conv/np.max(y_conv)
+
+u = np.min(y_HQI)
+y_HQI = [y-u for y in y_HQI]
+y_HQI = y_HQI/np.max(y_HQI)
+
+u = np.min(y_discr)
+y_discr = [y-u for y in y_discr]
+y_discr = y_discr/np.max(y_discr)
+
+u = np.min(y_timese)
+y_timese = [y-u for y in y_timese]
+y_timese = y_timese/np.max(y_timese)
+
 plt.plot(x_u, y_u, label='unknown')
-plt.plot(x2, y2, label='known')
+plt.plot(x_ultra, y_ultra, label=f'ultra {name_ultra}')
+plt.plot(x_conv, y_conv, label=f'conv {name_conv}')
+plt.plot(x_HQI, y_HQI, label=f'HQI {name_HQI}')
+plt.plot(x_discr, y_discr, label=f'discr {name_discr}')
+plt.plot(x_timese, y_timese, label=f'timese {name_timese}')
+
 plt.legend()
 plt.show()
 
