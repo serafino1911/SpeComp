@@ -1,6 +1,6 @@
 import numpy as np
 import os
-import scipy
+import scipy.signal
 import scipy.interpolate
 import math as m
 
@@ -48,60 +48,57 @@ def same_x_projection(x_1, y_1, x_2, y_2, deltaspace = 2):
     new_x_2 = np.arange(x_2[0], x_2[-1], min_delta_x/deltaspace)
     y_1 = np.interp(new_x_1, x_1, y_1)
     y_2 = np.interp(new_x_2, x_2, y_2)
-    return y_1,y_2, new_x_1, new_x_2
+    f = scipy.interpolate.interp1d(new_x_1, y_1, fill_value="extrapolate")
+    y_1 = f(new_x_2)
+    return y_1, y_2, new_x_1, new_x_2
 
-def convolution(x_1 : list, y_1 : list, x_2 : list, y_2 : list):
-    x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
+def pre_elaboration(x_1_i : list, y_1_i : list, x_2_i : list, y_2_i : list, divdelta : float = 1):
+    x_1, y_1, x_2, y_2 = select_intervall(x_1_i, y_1_i, x_2_i, y_2_i)
     y_1 = clear_y(y_1)
     y_2 = clear_y(y_2)
-    y_1, y_2, x_1, x_2 = same_x_projection(x_1, y_1, x_2, y_2, 1)
-    f = scipy.interpolate.interp1d(x_1, y_1, fill_value="extrapolate")
-    y_1 = f(x_2)
-    corr = np.correlate(y_1, y_2, mode='same')
-    return np.trapz(corr)
+    y_1, y_2, x_1, x_2 = same_x_projection(x_1, y_1, x_2, y_2, divdelta)
+    return x_1, y_1, x_2, y_2
 
-def compare_HQI(x_1 : list, y_1 : list, x_2 : list, y_2 : list):
-    x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
-    y_1 = clear_y(y_1)
-    y_2 = clear_y(y_2)
-    y_1, y_2, x_1, x_2  = same_x_projection(x_1, y_1, x_2, y_2, 4)
-    f = scipy.interpolate.interp1d(x_1, y_1, fill_value="extrapolate")
-    y_1 = f(x_2)
+def convolution(y_1 : list,y_2 : list):
+    #corr = np.correlate(y_1, y_2, mode='same')
+    conv = np.convolve(y_1, y_2, mode='same')
+    return np.max(conv) #np.trapz(corr)
+
+def compare_HQI(y_1 : list, y_2 : list):
+    # x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
+    # y_1 = clear_y(y_1)
+    # y_2 = clear_y(y_2)
+    # y_1, y_2, x_1, x_2  = same_x_projection(x_1, y_1, x_2, y_2, 4)
     hqi = round((m.pow(np.dot(y_2,y_1),2))/(np.dot(y_2,y_2)*np.dot(y_1,y_1)),2)
     return hqi
 
-def compare_timeseries_correlation(x_1 : list, y_1 : list, x_2 : list, y_2 : list):
-    x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
-    #resample to same length
-    y_1 = clear_y(y_1)
-    y_2 = clear_y(y_2)
-    y_1 = np.linspace(y_1[0], y_1[-1], len(y_2))
+def compare_timeseries_correlation(y_1 : list, y_2 : list):
+    # fast convolution
+    conv = scipy.signal.fftconvolve(y_1, y_2[::-1], mode='same')
+    return np.max(np.abs(conv))
 
-    #y_1 = np.interp(y_base, y_1, y_2)
-    return np.corrcoef(y_1, y_2)[0, 1]
-
-def norm_correlation(x_1 : list, y_1 : list, x_2 : list, y_2 : list):
-    x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
-    #resample to same length
-    y_1 = clear_y(y_1)
-    y_2 = clear_y(y_2)
-    y_1, y_2, x_1, x_2  = same_x_projection(x_1, y_1, x_2, y_2, 4)    
+def norm_correlation(y_1 : list, y_2 : list):
+    # x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
+    # #resample to same length
+    # y_1 = clear_y(y_1)
+    # y_2 = clear_y(y_2)
+    # y_1, y_2, x_1, x_2  = same_x_projection(x_1, y_1, x_2, y_2, 4)    
     #normalize
     y_1 = y_1/np.max(y_1)
     y_2 = y_2/np.max(y_2)
-    f = scipy.interpolate.interp1d(x_1, y_1, fill_value="extrapolate")
-    y_1 = f(x_2)
     return np.corrcoef(y_1, y_2)[0, 1]
 
-def discrete_correlation(x_1 : list, y_1 : list, x_2 : list, y_2 : list):
-    x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
-    y_1 = clear_y(y_1)
-    y_2 = clear_y(y_2)
-    y_1, y_2, x_1, x_2  = same_x_projection(x_1, y_1, x_2, y_2, 4)
-    f = scipy.interpolate.interp1d(x_1, y_1, fill_value="extrapolate")
-    y_1 = f(x_2)
+def discrete_correlation(y_1 : list, y_2 : list):
+    # x_1, y_1, x_2, y_2 = select_intervall(x_1, y_1, x_2, y_2)
+    # y_1 = clear_y(y_1)
+    # y_2 = clear_y(y_2)
+    # y_1, y_2, x_1, x_2  = same_x_projection(x_1, y_1, x_2, y_2, 4)
     corr = np.corrcoef(y_1, y_2)[0,1]
     return np.abs(corr)
+
+def another_correlation(y_1 : list, y_2 : list): #to define
+    corr = np.correlate(y_1, y_2, mode='same')
+    return np.trapz(corr)
 
 def compare(path1, file_list):
     result_norm = []
@@ -110,14 +107,15 @@ def compare(path1, file_list):
     result_HQI = []
     result_timese = []
 
-    x_u, y_u = load_data(path1)
+    x_u_i, y_u_i = load_data(path1)
     for file in file_list:
         x2, y2 = load_data(file)
-        corr_norm = norm_correlation(x_u, y_u, x2, y2) #DISCARDED
-        corr_conv = convolution(x_u, y_u, x2, y2) #DISCARDED
-        corr_HQI = compare_HQI(x_u, y_u, x2, y2)
-        corr_discr = discrete_correlation(x_u, y_u, x2, y2)
-        corr_timese = compare_timeseries_correlation(x_u, y_u, x2, y2) #NON HA SENSO LO SPAZIO COMUNE
+        x_u, y_u, x2, y2 = pre_elaboration(x_u_i, y_u_i, x2, y2, 2)
+        corr_norm = norm_correlation(y_u, y2) 
+        corr_conv = convolution(y_u, y2) 
+        corr_HQI = compare_HQI(y_u, y2)
+        corr_discr = discrete_correlation(y_u, y2)
+        corr_timese = compare_timeseries_correlation(y_u, y2) #fft convolution
         result_norm.append((file, corr_norm))
         result_conv.append((file, corr_conv))
         result_HQI.append((file, corr_HQI))
@@ -129,7 +127,6 @@ def compare(path1, file_list):
     result_HQI.sort(key=lambda x: x[1], reverse=True)
     result_discr.sort(key=lambda x: x[1], reverse=True)
     result_timese.sort(key=lambda x: x[1], reverse=True)
-
     return result_norm, result_conv, result_HQI, result_discr, result_timese
 
 
@@ -144,7 +141,7 @@ print('NORM: ', result_norm[:5])
 print('CONV: ', result_conv[:5])
 print('HQI: ', result_HQI[:5])
 print('DISCR: ', result_discr[:5])
-print('TIMESE: ', result_timese[:5])
+print('FFT CONV: ', result_timese[:5])
 
 #take first and plot it
 import matplotlib.pyplot as plt
