@@ -15,7 +15,6 @@ Project Organization
     │   ├── Unknown
     │   └── Results
     ├── docs
-
     ├── reports
     │   └── figures
     └── src

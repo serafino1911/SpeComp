@@ -18,6 +18,7 @@ def convolution(y_1 : list,y_2 : list) -> float:
     return np.max(conv)
 
 def compare_HQI(y_1 : list, y_2 : list) -> float:
+    # sourcery skip: inline-immediately-returned-variable
     """ 
     HQI correlation of spectra
 
@@ -155,13 +156,13 @@ def main(unknown : str):
     file_name = unknown.split('\\')[-1]
     #save results
     with open(f'reports\\results_{file_name}', 'w') as f:
-        f.write('NORM: ' + '\n\t'.join(str(result_norm[:5])) + ' \n\n')
-        f.write('CONV: ' + '\n\t'.join(str(result_conv[:5]) )+ ' \n\n')
-        f.write('HQI: ' + '\n\t'.join(str(result_HQI[:5])) + ' \n\n')
-        f.write('DISCR: ' + '\n\t'.join(str(result_discr[:5])) + ' \n\n')
-        f.write('FFT CONV: ' + '\n\t'.join(str(result_fftconv[:5])) + ' \n\n')
-        f.write('CORRELATE: ' + '\n\t'.join(str(result_correlate[:5])) + ' \n\n')
-        f.write('DIFF: ' + '\n\t'.join(str(result_diff[:5])) + ' \n\n')
+        f.write('NORM: \n\t' + '\n\t'.join( [ str(val[0]) + ' = ' + str(val[1]) for val in result_norm[:5]] ) + ' \n\n')
+        f.write('CONV: \n\t' + '\n\t'.join( [ str(val[0]) + ' = ' + str(val[1]) for val in result_conv[:5]] ) + ' \n\n')
+        f.write('HQI: \n\t' + '\n\t'.join( [ str(val[0]) + ' = ' + str(val[1]) for val in result_HQI[:5]] ) + ' \n\n')
+        f.write('DISCR: \n\t' + '\n\t'.join( [ str(val[0]) + ' = ' + str(val[1]) for val in result_discr[:5]] ) + ' \n\n')
+        f.write('FFT CONV: \n\t' + '\n\t'.join( [ str(val[0]) + ' = ' + str(val[1]) for val in result_fftconv[:5]] ) + ' \n\n')
+        f.write('CORRELATE: \n\t' + '\n\t'.join( [ str(val[0]) + ' = ' + str(val[1]) for val in result_correlate[:5]] ) + ' \n\n')
+        f.write('DIFF: \n\t' + '\n\t'.join( [ str(val[0]) + ' = ' + str(val[1]) for val in result_diff[:5]] ) + ' \n\n')
 
 
     #take first and plot it
