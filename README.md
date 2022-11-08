@@ -14,10 +14,12 @@ Project Organization
     │   ├── DB
     │   ├── Unknown
     │   └── Results
+    ├── docs
+
     ├── reports
     │   └── figures
     └── src
         ├── external
-        ├── tools
-            └── modules
+        └── tools
+            └── modules
 
