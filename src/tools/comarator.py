@@ -18,6 +18,7 @@ def convolution(y_1 : list,y_2 : list) -> float:
     return np.max(conv)
 
 def compare_HQI(y_1 : list, y_2 : list) -> float:
+    # sourcery skip: inline-immediately-returned-variable
     """ 
     HQI correlation of spectra
 
