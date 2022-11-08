@@ -151,7 +151,7 @@ def main(unknown : str):
     print('CORRELATE: ', result_correlate[:5])
     print('DIFF: ', result_diff[:5])
 
-    file_name = unknown.split('/')[-1]
+    file_name = unknown.split('\\')[-1]
     #save results
     with open(f'reports\\results_{file_name}', 'w') as f:
         f.write('NORM: ' + '\n\t'.join(str(result_norm[:5])) + ' \n\n')
