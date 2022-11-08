@@ -15,10 +15,10 @@ Project Organization
     │   ├── Unknown
     │   └── Results
     ├── docs
+
     ├── reports
     │   └── figures
     └── src
-        ├── data
         ├── external
         └── tools
             └── modules

@@ -25,7 +25,6 @@ def clear_y(y_test, guassian_filter : int = 0, normalization : str = 'MinMax'):
         y_test = (y_test - np.mean(y_test)) / np.std(y_test)
     return y_test
 
-
 def select_intervall(x_1, y_1, x_2, y_2):
     if len(x_1) != len(y_1) or len(x_2) != len(y_2):
         return 0
