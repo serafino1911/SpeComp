@@ -14,9 +14,15 @@ def load_data(path):
         y = [float(line[1]) for line in data]
     return x, y
 
-def clear_y(y_test):
-    k = np.min(y_test)
-    y_test = [y-k for y in y_test]
+def clear_y(y_test, guassian_filter : int = 0, normalization : str = 'MinMax'):
+    if guassian_filter:
+        y_test = scipy.ndimage.filters.gaussian_filter1d(y_test, guassian_filter) 
+    if normalization == 'MinMax':
+        minim = np.min(y_test)
+        maxim = np.max(y_test)
+        y_test = [y - minim for y in y_test] / maxim
+    elif normalization == 'Stat':
+        y_test = (y_test - np.mean(y_test)) / np.std(y_test)
     return y_test
 
 def select_intervall(x_1, y_1, x_2, y_2):
@@ -48,15 +54,13 @@ def same_x_projection(x_1, y_1, x_2, y_2, deltaspace = 2):
     min_delta_x = min(min_delta_x1, min_delta_x2)
     new_x_1 = np.arange(x_1[0], x_1[-1], min_delta_x/deltaspace)
     new_x_2 = np.arange(x_2[0], x_2[-1], min_delta_x/deltaspace)
-    y_1 = np.interp(new_x_1, x_1, y_1)
+    y_1 = np.interp(new_x_2, x_1, y_1)
     y_2 = np.interp(new_x_2, x_2, y_2)
-    f = scipy.interpolate.interp1d(new_x_1, y_1, fill_value="extrapolate")
-    y_1 = f(new_x_2)
     return y_1, y_2, new_x_1, new_x_2
 
 def pre_elaboration(x_1_i : list, y_1_i : list, x_2_i : list, y_2_i : list, divdelta : float = 1):
     x_1, y_1, x_2, y_2 = select_intervall(x_1_i, y_1_i, x_2_i, y_2_i)
-    y_1 = clear_y(y_1)
-    y_2 = clear_y(y_2)
+    y_1 = clear_y(y_1, guassian_filter = 1, normalization = 'Stat')
+    y_2 = clear_y(y_2, guassian_filter = 1, normalization = 'Stat')
     y_1, y_2, x_1, x_2 = same_x_projection(x_1, y_1, x_2, y_2, divdelta)
     return x_1, y_1, x_2, y_2

@@ -98,7 +98,7 @@ bin/
 /data/DB
 /data/Results
 /data/Unknown
-/reports
+/reports/figures
 
 # exclude external models from source control
 /src/external/
