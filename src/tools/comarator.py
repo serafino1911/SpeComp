@@ -46,6 +46,7 @@ def fft_convolution(y_1 : list, y_2 : list) -> float:
     conv = scipy.signal.fftconvolve(y_1, y_2[::-1], mode='same')
     return np.max(np.abs(conv))
 
+
 def norm_correlation(y_1 : list, y_2 : list) -> float:
     """
     normalized correlation of spectra using the function np.corrcoef
@@ -149,7 +150,7 @@ def main(unknown : str):
     print('DISCR: ', result_discr[:5])
     print('FFT CONV: ', result_fftconv[:5])
     print('CORRELATE: ', result_correlate[:5])
-    print('DIFF: ', result_diff[:5])
+
 
 
     #take first and plot it
@@ -160,7 +161,9 @@ def main(unknown : str):
     x_HQI, y_HQI = load_data(result_HQI[0][0])
     x_discr, y_discr = load_data(result_discr[0][0])
     x_fftconv, y_fftconv = load_data(result_fftconv[0][0])
+
     x_correlate, y_correlate = load_data(result_correlate[0][0])
+
     x_diff, y_diff = load_data(result_diff[0][0])
     name_norm = result_norm[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
     name_conv = result_conv[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
@@ -168,6 +171,7 @@ def main(unknown : str):
     name_discr = result_discr[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
     name_fftconv = result_fftconv[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
     name_correlate = result_correlate[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
+
     name_diff = result_diff[0][0].split('\\')[-1].replace('.txt', '').replace(' ', '')
 
     # normalize data
