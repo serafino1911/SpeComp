@@ -16,7 +16,10 @@ def main_window_tk():
     # create a menu
 
     #display a graph
-    gf.display_graph(root, GRAPH)
+    if gf.FILE_LOADED:
+        gf.display_graph(root)
+
+    gf.limit_data(root)
 
 
     tk.mainloop()
