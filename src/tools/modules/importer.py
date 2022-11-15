@@ -7,3 +7,5 @@ import matplotlib.pyplot as plt
 import scipy.ndimage
 import tkinter as tk
 from tkinter import filedialog
+import threading as th
+import time

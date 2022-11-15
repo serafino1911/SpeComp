@@ -3,6 +3,9 @@ from modules.basic_functions import *
 
 BASE_DIR = 'data\\DB'
 
+POSSIBILITIES = ["NORM_CORR", "CONV", "FFT_CONV", "HQI", "DISCR", "CORRE", "DIFF"]
+REVERSE = ["NORM_CORR", "CONV", "FFT_CONV", "HQI", "DISCR", "CORRE"]
+
 def convolution(y_1 : list,y_2 : list) -> float:
     """
     convolution of spectra
@@ -103,6 +106,36 @@ def difference(y_1 : list, y_2 : list):
     """
     diff = np.sum(np.abs([x-y for x,y in zip(y_1, y_2)]))
     return(np.abs(diff)/len(y_1))
+
+FUNCTIONS = {"NORM_CORR" : norm_correlation ,
+                "FFT_CONV" : fft_convolution,
+                "CONV" : convolution,
+                "HQI" : compare_HQI,
+                "DISCR" : discrete_correlation,
+                "CORRE" : correlate_correlation,
+                "DIFF" : difference}
+
+def compare_v(file_loaded, use_indexes, file_list):
+    max_list = use_indexes.get("List_results")
+    extern_data = {pos: [] for pos in POSSIBILITIES if use_indexes.get(pos)}
+    x_u_i, y_u_i = load_data(file_loaded)
+    for file in file_list:
+        x2, y2 = load_data(file)
+        x_u, y_u, x2, y2 = pre_elaboration_V(x_u_i, y_u_i, x2, y2, 1, use_indexes.get("Filter"), use_indexes.get("Normalization"))
+        for ex, value in extern_data.items():
+            corr = FUNCTIONS[ex](y_u, y2)
+            value.append(file, round(corr, 3))
+
+    for ex, value_ in extern_data.items():
+        # sort the list of tuples by the second element
+        if ex in REVERSE:
+            value_.sort(key=lambda tup: tup[1], reverse=True)
+            
+        else:
+            value_.sort(key=lambda tup: tup[1], reverse=False)
+        value_ = value_[:max_list]
+        extern_data[ex] = value_
+    return extern_data
 
 
 def compare(path1, file_list):
@@ -255,6 +288,11 @@ def main(unknown : str):
     #plt.show()
     #close
     plt.close()
+
+def main_v(file_loaded, use_indexes, db):
+    file_list = database_files(db)
+    unknown = file_loaded
+    exeni = compare_v(unknown, file_list, use_indexes)
 
 if __name__ == '__main__':
     import glob

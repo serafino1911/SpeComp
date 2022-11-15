@@ -250,6 +250,12 @@ def configuration_window(root):
     load_button.grid(row=15, column=3)
 
 
+def start(root):
+    if OPEN_CONFIG or OPEN_LOAD or OPEN_SAVE:
+        error_message(root, 'Please close the other windows first')
+        return
+    
+
 
 def display_graph(root, x = None, y = None):
     if FILE_LOADED:

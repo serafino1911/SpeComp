@@ -26,7 +26,7 @@ def main_window_tk():
     # create a menu
     gf.limit_data(root)
 
-
+    gf.start(root)
 
     root.mainloop()
     #tk.mainloop()

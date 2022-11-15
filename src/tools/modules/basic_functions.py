@@ -25,6 +25,17 @@ def clear_y(y_test, guassian_filter : int = 0, normalization : str = 'MinMax'):
         y_test = (y_test - np.mean(y_test)) / np.std(y_test)
     return y_test
 
+def clear_y_V(y_test, guassian_filter : bool = True, normalization : str = 'MinMax'):
+    if guassian_filter:
+        y_test = scipy.ndimage.filters.gaussian_filter1d(y_test, 3) 
+    if normalization == 'MinMax':
+        minim = np.min(y_test)
+        maxim = np.max(y_test)
+        y_test = [y - minim for y in y_test] / maxim
+    elif normalization == 'Stat':
+        y_test = (y_test - np.mean(y_test)) / np.std(y_test)
+    return y_test
+
 def select_intervall(x_1, y_1, x_2, y_2):
     if len(x_1) != len(y_1) or len(x_2) != len(y_2):
         return 0
@@ -62,5 +73,12 @@ def pre_elaboration(x_1_i : list, y_1_i : list, x_2_i : list, y_2_i : list, divd
     x_1, y_1, x_2, y_2 = select_intervall(x_1_i, y_1_i, x_2_i, y_2_i)
     y_1 = clear_y(y_1, guassian_filter = 1, normalization = 'Stat')
     y_2 = clear_y(y_2, guassian_filter = 1, normalization = 'Stat')
+    y_1, y_2, x_1, x_2 = same_x_projection(x_1, y_1, x_2, y_2, divdelta)
+    return x_1, y_1, x_2, y_2
+
+def pre_elaboration_V(x_1_i : list, y_1_i : list, x_2_i : list, y_2_i : list, divdelta : float = 1, filter : bool = True, norm : str = 'Stat'):
+    x_1, y_1, x_2, y_2 = select_intervall(x_1_i, y_1_i, x_2_i, y_2_i)
+    y_1 = clear_y_V(y_1, filter, normalization = norm)
+    y_2 = clear_y_V(y_2, filter, normalization = norm)
     y_1, y_2, x_1, x_2 = same_x_projection(x_1, y_1, x_2, y_2, divdelta)
     return x_1, y_1, x_2, y_2
