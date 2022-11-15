@@ -1,10 +1,12 @@
 from modules.importer import *
 from modules.basic_functions import *
+import comarator as comp
 
 WORKING_FILE = None
 OPEN_CONFIG = False
 OPEN_LOAD = False
 OPEN_SAVE = False
+OPEN_LOADING = False
 X, Y = None, None
 FILE_LOADED = False
 
@@ -109,7 +111,7 @@ def load_configuration(top, root):
                 print(element)
                 element = element.split(":")
                 if element[0] in LIST_BOOL:
-                    USE_INDEXES[element[0]] = '1' == element[1]
+                    USE_INDEXES[element[0]] = element[1] == '1'
                 elif element[1].isdigit():
                     USE_INDEXES[element[0]] = int(element[1])
                 else:
@@ -250,11 +252,42 @@ def configuration_window(root):
     load_button.grid(row=15, column=3)
 
 
+def loading_window(event):
+    global OPEN_LOADING
+    OPEN_LOADING = True
+    
+    top = tk.Tk()
+    top.title('Loading')
+    top.geometry('300x200')
+    top.resizable(0, 0)
+    while not event.is_set():
+        top.grab_set()
+        top.focus_set()
+        top.focus_force()
+        top.update()
+        time.sleep(0.2)
+
+    top.destroy()
+    OPEN_LOADING = False
+    return
+
+
 def start(root):
     if OPEN_CONFIG or OPEN_LOAD or OPEN_SAVE:
         error_message(root, 'Please close the other windows first')
         return
-    
+    event = th.Event()
+    thread = th.Thread(target=loading_window, args=(event,))
+    thread.start()
+    try:
+        main_fin = comp.main_v(FILE_LOADED, USE_INDEXES)
+    except Exception as e:
+        error_message(root, e)
+        return
+    finally:
+        event.set()
+        thread.join()
+        return
 
 
 def display_graph(root, x = None, y = None):
