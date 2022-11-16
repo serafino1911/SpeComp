@@ -10,8 +10,9 @@ OPEN_LOADING = False
 X, Y = None, None
 FILE_LOADED = False
 
-BASE_DIR = os.getcwd()
+RESULTS = None
 
+BASE_DIR = os.getcwd()
 
 USE_INDEXES = {"NORM_CORR": False, 
                 "CONV": False, 
@@ -23,6 +24,7 @@ USE_INDEXES = {"NORM_CORR": False,
                 "Normalization" : "Stat",
                 "List_results" : 10,
                 "Filter": False,
+                "DB" : None,
                 }
 
 LIST_BOOL = ["NORM_CORR", "CONV", "FFT_CONV", "HQI", "DISCR", "CORRE", "DIFF", "Filter"]
@@ -39,7 +41,7 @@ def clear_checks(data):
         if isinstance(check, tk.Spinbox):
             check.delete(0, 10)
 
-def load_config(root, data):
+def use_config(root, data):
     global OPEN_CONFIG
     global USE_INDEXES
     USE_INDEXES["NORM_CORR"] = data[0].get()
@@ -51,7 +53,8 @@ def load_config(root, data):
     USE_INDEXES["DIFF"] = data[6].get()
     USE_INDEXES["Normalization"] = data[7].get()
     USE_INDEXES["List_results"] = data[8].get()
-    USE_INDEXES["Filter"] = data[9].get()    
+    USE_INDEXES["Filter"] = data[9].get()  
+    USE_INDEXES["DB"] = data[10].get()  
     root.destroy()
     OPEN_CONFIG = False
     #print the value of the checks
@@ -70,6 +73,7 @@ def save_configuration(data):
     USE_INDEXES["Normalization"] = data[7].get()
     USE_INDEXES["List_results"] = data[8].get()
     USE_INDEXES["Filter"] = data[9].get()   
+    USE_INDEXES["DB"] = data[10].get()
 
     #open a path to save the configuration
     path = filedialog.asksaveasfilename(initialdir = BASE_DIR, title = "Select file",filetypes = (("cnf files","*.cnf"),("all files","*.*"))) 
@@ -143,6 +147,7 @@ def configuration_window(root):
     normalization_var = tk.StringVar(value = USE_INDEXES["Normalization"])
     list_results_var = tk.IntVar(value = USE_INDEXES["List_results"])
     filter_var = tk.IntVar(value = USE_INDEXES["Filter"])
+    db_var = tk.StringVar(value = USE_INDEXES["DB"])
 
     # check boxes
     check_norm_corr = tk.Checkbutton(top, text='Normalised Correlation')
@@ -232,24 +237,35 @@ def configuration_window(root):
     else:
         filter_false.deselect()
 
+    # select folder
+    
+    folder_label = tk.Label(top, text= 'Database Folder: ').grid(row=15, column=0)
+    folder_entry = tk.Entry(top)#.grid(row=0, column =1)
+    folder_entry.grid(row=15, column =1)
+    if USE_INDEXES["DB"]:
+        folder_entry.insert(0, USE_INDEXES["DB"])
+    folder_button = tk.Button(top, text = "Browse", command= lambda: folder_entry.insert(0, filedialog.askdirectory())).grid(row=15, column =2)
+
+
+
     # save the checks
-    data = [check_norm_corr_var, check_conv_var, check_fft_conv_var, check_hqi_var, check_discr_var, check_corre_var, check_diff_var, normalization_var, list_results_var, filter_var]
-    boxes = [check_norm_corr, check_conv, check_fft_conv, check_hqi, check_discr, check_corre, check_diff, normalization_stat, normalization_max, list_results, list_results, filter_true, filter_false]
+    data = [check_norm_corr_var, check_conv_var, check_fft_conv_var, check_hqi_var, check_discr_var, check_corre_var, check_diff_var, normalization_var, list_results_var, filter_var, folder_entry]
+    boxes = [check_norm_corr, check_conv, check_fft_conv, check_hqi, check_discr, check_corre, check_diff, normalization_stat, normalization_max, list_results, list_results, filter_true, filter_false, folder_button, folder_entry]
 
     # clear button
     clear_button = tk.Button(top, text='Clear', command=lambda : clear_checks(boxes))
-    clear_button.grid(row=15, column=0)
+    clear_button.grid(row=16, column=0)
 
     #close button
 
-    close_button = tk.Button(top, text='Use', command=lambda : load_config(top, data))
-    close_button.grid(row=15, column=1)
+    close_button = tk.Button(top, text='Use', command=lambda : use_config(top, data))
+    close_button.grid(row=16, column=1)
 
     save_button = tk.Button(top, text='Save', command=lambda : save_configuration(data))
-    save_button.grid(row=15, column=2)
+    save_button.grid(row=16, column=2)
 
     load_button = tk.Button(top, text='Load', command=lambda : load_configuration(top, root))
-    load_button.grid(row=15, column=3)
+    load_button.grid(row=16, column=3)
 
 
 def loading_window(event):
@@ -280,15 +296,61 @@ def start(root):
     thread = th.Thread(target=loading_window, args=(event,))
     thread.start()
     try:
-        main_fin = comp.main_v(FILE_LOADED, USE_INDEXES)
+        main_fin = comp.main_v(WORKING_FILE, USE_INDEXES)
     except Exception as e:
+        main_fin = None
         error_message(root, e)
-        return
     finally:
         event.set()
         thread.join()
-        return
+        if main_fin is not None:
+            show_results(root, main_fin)
+        return main_fin
 
+def show_results(root, main_fin):
+    top = tk.Toplevel(root)
+    top.title('Results')
+    top.geometry('800x600')
+    top.resizable(0, 0)
+    top.grab_set()
+    top.focus_set()
+    top.focus_force()
+
+    # create a Frame for the Text and Scrollbar
+    txt_frm = tk.Frame(top)
+    txt_frm.pack(fill='both', expand=True)
+    # ensure a consistent GUI size
+    txt_frm.grid_propagate(False)
+    # implement stretchability
+    txt_frm.grid_rowconfigure(0, weight=1)
+    txt_frm.grid_columnconfigure(0, weight=1)
+
+    # create a Text widget
+    txt = tk.Text(txt_frm, borderwidth=3, relief='sunken')
+    txt.grid(row=0, column=0, sticky='nsew', padx=2, pady=2)
+
+    # create a Scrollbar and associate it with txt
+    scrollb = tk.Scrollbar(txt_frm, command=txt.yview)
+    scrollb.grid(row=0, column=1, sticky='nsew')
+    txt['yscrollcommand'] = scrollb.set
+    for key, lista in main_fin.items():
+            txt.insert('end',f'{key}: \n\t' + '\n\t'.join( [ str(val[0]).replace('/', '\\\\') + ' = ' + str(val[1]) for val in lista] ) + ' \n\n')
+    txt.config(state='disabled')
+
+    # close button
+    close_button = tk.Button(top, text='Close', command=top.destroy)
+    close_button.pack(side='bottom')
+
+    save_button = tk.Button(top, text='Save', command=lambda : save_results(main_fin))
+    save_button.pack(side='bottom')
+
+    return
+
+def save_results(main_fin): 
+    file = filedialog.asksaveasfilename(initialdir = BASE_DIR, title = "Select file", filetypes = (("txt files","*.txt"),("all files","*.*")))
+    with open(file + '.txt', 'w') as f:
+        for key, lista in main_fin.items():
+            f.write(f'{key}: \n\t' + '\n\t'.join( [ str(val[0]).replace('/', '\\\\') + ' = ' + str(val[1]) for val in lista] ) + ' \n\n')
 
 def display_graph(root, x = None, y = None):
     if FILE_LOADED:

@@ -124,7 +124,7 @@ def compare_v(file_loaded, use_indexes, file_list):
         x_u, y_u, x2, y2 = pre_elaboration_V(x_u_i, y_u_i, x2, y2, 1, use_indexes.get("Filter"), use_indexes.get("Normalization"))
         for ex, value in extern_data.items():
             corr = FUNCTIONS[ex](y_u, y2)
-            value.append(file, round(corr, 3))
+            value.append((file, round(corr, 3)))
 
     for ex, value_ in extern_data.items():
         # sort the list of tuples by the second element
@@ -289,10 +289,11 @@ def main(unknown : str):
     #close
     plt.close()
 
-def main_v(file_loaded, use_indexes, db):
-    file_list = database_files(db)
+def main_v(file_loaded, use_indexes):
+    file_list = database_files(use_indexes['DB'])
     unknown = file_loaded
-    exeni = compare_v(unknown, file_list, use_indexes)
+    exeni = compare_v(unknown, use_indexes, file_list)
+    return exeni
 
 if __name__ == '__main__':
     import glob

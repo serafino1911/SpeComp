@@ -20,13 +20,16 @@ def main_window_tk():
     file_box = tk.Entry(root, textvariable=file_var)
     file_box.grid(row=2, column=1)
 
-    load_button = tk.Button(root, text='Load File', command=lambda : gf.select_file(root, file_box))
+
+    load_button = tk.Button(root, text='Load File', command=lambda : gf.select_file(root, False, file_box))
     load_button.grid(row=2, column=0)
     gf.up_menu(root, file_box)
     # create a menu
     gf.limit_data(root)
-
-    gf.start(root)
+    
+    #start button
+    start_button = tk.Button(root, text='Start', command=lambda : gf.start(root))
+    start_button.grid(row=3, column=0)
 
     root.mainloop()
     #tk.mainloop()
