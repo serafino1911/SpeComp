@@ -36,12 +36,16 @@ def clear_y_V(y_test, guassian_filter : bool = True, normalization : str = 'MinM
         y_test = (y_test - np.mean(y_test)) / np.std(y_test)
     return y_test
 
-def select_intervall(x_1, y_1, x_2, y_2):
+def select_intervall(x_1, y_1, x_2, y_2,min_max : list = [None,None], exclusion_zone : list = [None,None]):
     if len(x_1) != len(y_1) or len(x_2) != len(y_2):
         return 0
     # find same intervall
     x_min = max(x_1[0], x_2[0])
     x_max = min(x_1[-1], x_2[-1])
+    if min_max[0]  and x_min < min_max[0]:
+        x_min = min_max[0]
+    if min_max[1] and x_max > min_max[1]:
+        x_max = min_max[1]
     i_min = next((i for i in range(len(x_1)) if x_1[i] >= x_min), 0)
     for i in range(len(x_2)):
         if x_2[i] >= x_min:
@@ -57,6 +61,15 @@ def select_intervall(x_1, y_1, x_2, y_2):
     y_1 = y_1[i_min:i_max]
     x_2 = x_2[i_min:i_max]
     y_2 = y_2[i_min:i_max]
+    # exclusion zone
+    if exclusion_zone[0] and exclusion_zone[1] :
+        j_min = next((i for i in range(len(x_1)) if x_1[i] >= exclusion_zone[0]), 0)
+        j_max = next((i for i in range(len(x_1)) if x_1[i] >= exclusion_zone[1]), 0) 
+        x_1 = x_1[:j_min] + x_1[j_max:]
+        y_1 = y_1[:j_min] + y_1[j_max:]
+        x_2 = x_2[:j_min] + x_2[j_max:]
+        y_2 = y_2[:j_min] + y_2[j_max:]
+
     return x_1, y_1, x_2, y_2
 
 def same_x_projection(x_1, y_1, x_2, y_2, deltaspace = 2):
@@ -76,9 +89,9 @@ def pre_elaboration(x_1_i : list, y_1_i : list, x_2_i : list, y_2_i : list, divd
     y_1, y_2, x_1, x_2 = same_x_projection(x_1, y_1, x_2, y_2, divdelta)
     return x_1, y_1, x_2, y_2
 
-def pre_elaboration_V(x_1_i : list, y_1_i : list, x_2_i : list, y_2_i : list, divdelta : float = 1, filter : bool = True, norm : str = 'Stat'):
-    x_1, y_1, x_2, y_2 = select_intervall(x_1_i, y_1_i, x_2_i, y_2_i)
-    y_1 = clear_y_V(y_1, filter, normalization = norm)
+def pre_elaboration_V(x_1_i : list, y_1_i : list, x_2_i : list, y_2_i : list, divdelta : float = 1, filter : bool = True, norm : str = 'Stat', min_max : list = [None,None], exclusion_zone : list = [None,None]):
+    x_1, y_1, x_2, y_2 = select_intervall(x_1_i, y_1_i, x_2_i, y_2_i, min_max, exclusion_zone)
+    y_1 = clear_y_V(y_1, filter, normalization = norm, )
     y_2 = clear_y_V(y_2, filter, normalization = norm)
     y_1, y_2, x_1, x_2 = same_x_projection(x_1, y_1, x_2, y_2, divdelta)
     return x_1, y_1, x_2, y_2

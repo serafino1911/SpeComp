@@ -5,6 +5,8 @@ BASE_DIR = 'data\\DB'
 
 POSSIBILITIES = ["NORM_CORR", "CONV", "FFT_CONV", "HQI", "DISCR", "CORRE", "DIFF"]
 REVERSE = ["NORM_CORR", "CONV", "FFT_CONV", "HQI", "DISCR", "CORRE"]
+INTEGRAL = ["CONV", "FFT_CONV", "CORRE"]
+
 
 def convolution(y_1 : list,y_2 : list) -> float:
     """
@@ -115,15 +117,19 @@ FUNCTIONS = {"NORM_CORR" : norm_correlation ,
                 "CORRE" : correlate_correlation,
                 "DIFF" : difference}
 
-def compare_v(file_loaded, use_indexes, file_list):
+def compare_v(file_loaded, use_indexes, file_list, min_max, exclusion_zone, delta):
     max_list = use_indexes.get("List_results")
     extern_data = {pos: [] for pos in POSSIBILITIES if use_indexes.get(pos)}
     x_u_i, y_u_i = load_data(file_loaded)
+
     for file in file_list:
         x2, y2 = load_data(file)
-        x_u, y_u, x2, y2 = pre_elaboration_V(x_u_i, y_u_i, x2, y2, 1, use_indexes.get("Filter"), use_indexes.get("Normalization"))
+        x_u, y_u, x2, y2 = pre_elaboration_V(x_u_i, y_u_i, x2, y2, delta, use_indexes.get("Filter"), use_indexes.get("Normalization"), min_max, exclusion_zone)
         for ex, value in extern_data.items():
             corr = FUNCTIONS[ex](y_u, y2)
+            if ex in INTEGRAL:
+                normal = FUNCTIONS[ex](y_u, y_u)
+                corr = corr/normal
             value.append((file, round(corr, 3)))
 
     for ex, value_ in extern_data.items():
@@ -289,11 +295,10 @@ def main(unknown : str):
     #close
     plt.close()
 
-def main_v(file_loaded, use_indexes):
+def main_v(file_loaded, use_indexes, min_max, exclusion_zone, delta = 1 ):
     file_list = database_files(use_indexes['DB'])
     unknown = file_loaded
-    exeni = compare_v(unknown, use_indexes, file_list)
-    return exeni
+    return compare_v(unknown, use_indexes, file_list, min_max, exclusion_zone, delta)
 
 if __name__ == '__main__':
     import glob
