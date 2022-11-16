@@ -1,10 +1,6 @@
 from modules.importer import *
 import modules.gui_functions as gf
 
-BASE_DB = 'data\\DB'
-FILES_TO_COMPARE = []
-
-
 def main_window_tk():
     root = tk.Tk()
     root.title('Spectra Comparator')

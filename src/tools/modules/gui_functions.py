@@ -9,6 +9,9 @@ OPEN_SAVE = False
 OPEN_LOADING = False
 X, Y = None, None
 FILE_LOADED = False
+MAX_MIN = [None, None]
+MAX_MIN_EX = [None, None]
+
 
 RESULTS = None
 
@@ -83,9 +86,9 @@ def save_configuration(data):
     OPEN_SAVE = False
     #print the value of the checks
 
-def error_message(root, message):
+def error_message(root, message, title = 'Error'):
     top = tk.Toplevel(root)
-    top.title('Error')
+    top.title(title)
     top.geometry('300x100')
     top.resizable(True, True)
     error = tk.Label(top, text=message)
@@ -296,7 +299,7 @@ def start(root):
     thread = th.Thread(target=loading_window, args=(event,))
     thread.start()
     try:
-        main_fin = comp.main_v(WORKING_FILE, USE_INDEXES)
+        main_fin = comp.main_v(WORKING_FILE, USE_INDEXES, MAX_MIN, MAX_MIN_EX)
     except Exception as e:
         main_fin = None
         error_message(root, e)
@@ -429,7 +432,6 @@ def select_file(root, display = False, file_box = None):
         file_box.insert(0, os.path.basename(WORKING_FILE))
 
 def limit_data(root):
-
     minim = tk.StringVar()
     maxim = tk.StringVar()
     
@@ -445,6 +447,9 @@ def limit_data(root):
     max_entry.grid(row=0, column=4)
     max_entry.insert(0, 'None')
 
+    use_button = tk.Button(root, text='Use', command=lambda : use_limit(root, minim, maxim))
+    use_button.grid(row=0, column=5)
+
     # exclusion zone 
     ex_minim = tk.StringVar()
     ex_maxim = tk.StringVar()
@@ -456,12 +461,39 @@ def limit_data(root):
     ex_min_entry.insert(0, 'None')
 
 
+
     ex_max_label = tk.Label(root, text='Max Exclusion')
     ex_max_label.grid(row=1, column=2)
     ex_max_entry = tk.Entry(root, textvariable=ex_maxim)
     ex_max_entry.grid(row=1, column=4)
     ex_max_entry.insert(0, 'None')
 
-def start_comparison(root):
-    pass
+    ex_use_button = tk.Button(root, text='Use', command=lambda : use_exclusion(root, ex_minim, ex_maxim))
+    ex_use_button.grid(row=1, column=5)
+
+def use_limit(root, minim, maxim):
+    global MAX_MIN
+    if minim.get() and maxim.get():
+        try:
+            MAX_MIN[0] = float(minim.get())
+            MAX_MIN[1] = float(maxim.get())
+            error_message(root, 'Max e Min set', title='Success')
+        except:
+            error_message(root, 'Invalid number')
+    else:
+        MAX_MIN = [None, None]
+
+def use_exclusion(root, ex_minim, ex_maxim):
+    global MAX_MIN_EX
+    if ex_minim.get() and ex_maxim.get():
+        try:
+            MAX_MIN_EX[0] = float(ex_minim.get())
+            MAX_MIN_EX[1] = float(ex_maxim.get())
+            # open page with a message
+            error_message(root, 'Exclusion zone set', title='Success')
+
+        except:
+            error_message(root, 'Invalid number')
+    else:
+        MAX_MIN_EX = [None, None]
 
