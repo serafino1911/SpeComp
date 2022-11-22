@@ -12,7 +12,6 @@ FILE_LOADED = False
 MAX_MIN = [None, None]
 MAX_MIN_EX = [None, None]
 
-
 RESULTS = None
 
 BASE_DIR = os.getcwd()
@@ -27,6 +26,7 @@ USE_INDEXES = {"NORM_CORR": False,
                 "Normalization" : "Stat",
                 "List_results" : 10,
                 "Filter": False,
+                "Fluo_filter": False,
                 "DB" : None,
                 }
 
@@ -57,7 +57,8 @@ def use_config(root, data):
     USE_INDEXES["Normalization"] = data[7].get()
     USE_INDEXES["List_results"] = data[8].get()
     USE_INDEXES["Filter"] = data[9].get()  
-    USE_INDEXES["DB"] = data[10].get()  
+    USE_INDEXES["Fluo_filter"] = data[10].get()
+    USE_INDEXES["DB"] = data[11].get()  
     root.destroy()
     OPEN_CONFIG = False
     #print the value of the checks
@@ -150,6 +151,7 @@ def configuration_window(root):
     normalization_var = tk.StringVar(value = USE_INDEXES["Normalization"])
     list_results_var = tk.IntVar(value = USE_INDEXES["List_results"])
     filter_var = tk.IntVar(value = USE_INDEXES["Filter"])
+    fluo_filter_var = tk.IntVar(value = USE_INDEXES["Fluo_filter"])
     db_var = tk.StringVar(value = USE_INDEXES["DB"])
 
     # check boxes
@@ -222,23 +224,34 @@ def configuration_window(root):
     list_results = tk.Spinbox(top, from_=1, to=100, width=5, textvariable=list_results_var)
     list_results.grid(row=11, column=0, sticky='w')
 
-    # Filter tk.Radiobutton
-    filter_label = tk.Label(top, text='Filter')
-    filter_label.grid(row=12, column=0, sticky='w')
+    # Filter tk.checkbutton
+    check_filter = tk.Checkbutton(top, text='Filter')
+    check_filter.grid(row=12, column=0, sticky='w')
+    check_filter.config(variable=filter_var)
+    if USE_INDEXES["Filter"]:
+        check_filter.select()
+    # filter_label = tk.Label(top, text='Filter')
+    # filter_label.grid(row=12, column=0, sticky='w')
     
-    filter_true = tk.Radiobutton(top, text='True', variable=filter_var, value=True)
-    filter_true.grid(row=13, column=0, sticky='w')
-    if filter_var.get() == True:
-        filter_true.select()
-    else:
-        filter_true.deselect()
+    # filter_true = tk.Radiobutton(top, text='True', variable=filter_var, value=True)
+    # filter_true.grid(row=13, column=0, sticky='w')
+    # if filter_var.get() == True:
+    #     filter_true.select()
+    # else:
+    #     filter_true.deselect()
 
-    filter_false = tk.Radiobutton(top, text='False', variable=filter_var, value=False)
-    filter_false.grid(row=14, column=0, sticky='w')
-    if filter_var.get() == False:
-        filter_false.select()
-    else:
-        filter_false.deselect()
+    # filter_false = tk.Radiobutton(top, text='False', variable=filter_var, value=False)
+    # filter_false.grid(row=14, column=0, sticky='w')
+    # if filter_var.get() == False:
+    #     filter_false.select()
+    # else:
+    #     filter_false.deselect()
+
+    check_fluo_filter = tk.Checkbutton(top, text='Fluorescence Filter beta')
+    check_fluo_filter.grid(row=6, column=0, sticky='w')
+    check_fluo_filter.config(variable=fluo_filter_var)
+    if USE_INDEXES["DIFF"]:
+        check_fluo_filter.select()
 
     # select folder
     
@@ -252,8 +265,8 @@ def configuration_window(root):
 
 
     # save the checks
-    data = [check_norm_corr_var, check_conv_var, check_fft_conv_var, check_hqi_var, check_discr_var, check_corre_var, check_diff_var, normalization_var, list_results_var, filter_var, folder_entry]
-    boxes = [check_norm_corr, check_conv, check_fft_conv, check_hqi, check_discr, check_corre, check_diff, normalization_stat, normalization_max, list_results, list_results, filter_true, filter_false, folder_button, folder_entry]
+    data = [check_norm_corr_var, check_conv_var, check_fft_conv_var, check_hqi_var, check_discr_var, check_corre_var, check_diff_var, normalization_var, list_results_var, filter_var, fluo_filter_var, folder_entry]
+    boxes = [check_norm_corr, check_conv, check_fft_conv, check_hqi, check_discr, check_corre, check_diff, normalization_stat, normalization_max, list_results, list_results, check_filter, check_fluo_filter, folder_button, folder_entry]
 
     # clear button
     clear_button = tk.Button(top, text='Clear', command=lambda : clear_checks(boxes))
@@ -372,6 +385,61 @@ def display_graph(root, x = None, y = None):
         graph.create_line(0, 0, 200, 100)
         graph.create_line(0, 100, 200, 0, fill='red', dash=(4, 4))
         graph.create_rectangle(50, 25, 150, 75, fill='blue')
+
+def gui_norm(x : list, y : list):
+    my = max(y)
+    y = [i/my for i in y]
+    y = fluo_filter(x, y)
+    return x, y
+
+def display_files(files):
+    x, y = load_data(WORKING_FILE)
+    x, y = gui_norm(x, y)
+    name = os.path.basename(WORKING_FILE)
+    plt.plot(x, y, label=name)
+    for file in files:
+        try:
+            x, y = load_data(file)
+            x, y = gui_norm(x, y)
+            name = os.path.basename(file)
+            plt.plot(x, y, label=name)
+        except:
+            error_message(tk.Tk(), 'Error loading file: ' + file)
+    plt.legend()
+    plt.show()
+
+def display_filex(root):
+    if FILE_LOADED:
+    # box where user can paste the files
+        top = tk.Toplevel(root)
+        top.title('Files to display')
+        top.geometry('400x400')
+        top.resizable(True, True)
+
+        # create a Frame for the Text and Scrollbar
+        txt_frm = tk.Frame(top)
+        txt_frm.pack(fill='both', expand=True)
+        # ensure a consistent GUI size
+        txt_frm.grid_propagate(False)
+        # implement stretchability
+        txt_frm.grid_rowconfigure(0, weight=1)
+        txt_frm.grid_columnconfigure(0, weight=1)
+        
+        # create a Text widget
+        txt = tk.Text(txt_frm, borderwidth=3, relief='sunken')
+        txt.grid(row=0, column=0, sticky='nsew', padx=2, pady=2)
+
+        # create a Scrollbar and associate it with txt
+        scrollb = tk.Scrollbar(txt_frm, command=txt.yview)
+        scrollb.grid(row=0, column=1, sticky='nsew')
+        txt['yscrollcommand'] = scrollb.set
+
+        # display button
+        display_button = tk.Button(top, text='Display', command=lambda : display_files(txt.get('1.0', 'end').splitlines()))
+        display_button.pack(side='bottom')
+    else:
+        error_message(root, 'First load a file')
+
 
 def up_menu(root, file_box):
     menu = tk.Menu(root)
