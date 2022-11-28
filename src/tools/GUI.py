@@ -27,11 +27,13 @@ def main_window_tk():
     start_button = tk.Button(root, text='Start', command=lambda : gf.start(root))
     start_button.grid(row=3, column=0)
 
+    #display button
+    display_button = tk.Button(root, text='Display', command=lambda : gf.display_filex(root))
+    display_button.grid(row=3, column=1)
+
     root.mainloop()
-    #tk.mainloop()
 
 
-    # display the menu
 
 if __name__ == '__main__':
     main_window_tk()

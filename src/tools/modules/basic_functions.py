@@ -25,7 +25,9 @@ def clear_y(y_test, guassian_filter : int = 0, normalization : str = 'MinMax'):
         y_test = (y_test - np.mean(y_test)) / np.std(y_test)
     return y_test
 
-def clear_y_V(y_test, guassian_filter : bool = True, normalization : str = 'MinMax'):
+def clear_y_V(x_test, y_test, guassian_filter : bool = True, normalization : str = 'MinMax', fluo_filter_bool : bool = False):
+    if fluo_filter_bool:
+        y_test = fluo_filter(x_test, y_test)    
     if guassian_filter:
         y_test = scipy.ndimage.filters.gaussian_filter1d(y_test, 3) 
     if normalization == 'MinMax':
@@ -35,6 +37,12 @@ def clear_y_V(y_test, guassian_filter : bool = True, normalization : str = 'MinM
     elif normalization == 'Stat':
         y_test = (y_test - np.mean(y_test)) / np.std(y_test)
     return y_test
+
+def fluo_filter(x, y, *args, **kwargs):
+    z = np.polyfit(x, y, 3)
+    f = np.poly1d(z)
+    return y - f(x) * 0.7
+
 
 def select_intervall(x_1, y_1, x_2, y_2,min_max : list = [None,None], exclusion_zone : list = [None,None]):
     if len(x_1) != len(y_1) or len(x_2) != len(y_2):
@@ -89,9 +97,9 @@ def pre_elaboration(x_1_i : list, y_1_i : list, x_2_i : list, y_2_i : list, divd
     y_1, y_2, x_1, x_2 = same_x_projection(x_1, y_1, x_2, y_2, divdelta)
     return x_1, y_1, x_2, y_2
 
-def pre_elaboration_V(x_1_i : list, y_1_i : list, x_2_i : list, y_2_i : list, divdelta : float = 1, filter : bool = True, norm : str = 'Stat', min_max : list = [None,None], exclusion_zone : list = [None,None]):
+def pre_elaboration_V(x_1_i : list, y_1_i : list, x_2_i : list, y_2_i : list, divdelta : float = 1, filter : bool = True, norm : str = 'Stat', min_max : list = [None,None], exclusion_zone : list = [None,None], fluo_filter_bool : bool = False):
     x_1, y_1, x_2, y_2 = select_intervall(x_1_i, y_1_i, x_2_i, y_2_i, min_max, exclusion_zone)
-    y_1 = clear_y_V(y_1, filter, normalization = norm, )
-    y_2 = clear_y_V(y_2, filter, normalization = norm)
+    y_1 = clear_y_V(x_1, y_1, filter, normalization = norm, fluo_filter_bool = fluo_filter_bool)
+    y_2 = clear_y_V(x_2, y_2, filter, normalization = norm, fluo_filter_bool = fluo_filter_bool)
     y_1, y_2, x_1, x_2 = same_x_projection(x_1, y_1, x_2, y_2, divdelta)
     return x_1, y_1, x_2, y_2
