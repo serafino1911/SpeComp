@@ -16,6 +16,12 @@ RESULTS = None
 
 BASE_DIR = os.getcwd()
 
+CONF_DIPLAY = {
+    "fluo_filter" : False,
+    "Normalization" : "MinMax",
+    "Filter" : False,
+}
+
 USE_INDEXES = {"NORM_CORR": False, 
                 "CONV": False, 
                 "FFT_CONV": False, 
@@ -230,27 +236,11 @@ def configuration_window(root):
     check_filter.config(variable=filter_var)
     if USE_INDEXES["Filter"]:
         check_filter.select()
-    # filter_label = tk.Label(top, text='Filter')
-    # filter_label.grid(row=12, column=0, sticky='w')
-    
-    # filter_true = tk.Radiobutton(top, text='True', variable=filter_var, value=True)
-    # filter_true.grid(row=13, column=0, sticky='w')
-    # if filter_var.get() == True:
-    #     filter_true.select()
-    # else:
-    #     filter_true.deselect()
-
-    # filter_false = tk.Radiobutton(top, text='False', variable=filter_var, value=False)
-    # filter_false.grid(row=14, column=0, sticky='w')
-    # if filter_var.get() == False:
-    #     filter_false.select()
-    # else:
-    #     filter_false.deselect()
 
     check_fluo_filter = tk.Checkbutton(top, text='Fluorescence Filter beta')
-    check_fluo_filter.grid(row=6, column=0, sticky='w')
+    check_fluo_filter.grid(row=13, column=0, sticky='w')
     check_fluo_filter.config(variable=fluo_filter_var)
-    if USE_INDEXES["DIFF"]:
+    if USE_INDEXES["Fluo_filter"]:
         check_fluo_filter.select()
 
     # select folder
@@ -368,28 +358,54 @@ def save_results(main_fin):
         for key, lista in main_fin.items():
             f.write(f'{key}: \n\t' + '\n\t'.join( [ str(val[0]).replace('/', '\\\\') + ' = ' + str(val[1]) for val in lista] ) + ' \n\n')
 
-def display_graph(root, x = None, y = None):
-    if FILE_LOADED:
-        plt.plot(X, Y)
-        plt.show()
+def configuration_display(root):
 
-    else:
-        top = tk.Toplevel(root)
-        top.title('Graph')
-        top.geometry('400x400')
-        top.resizable(True, True)
+    top = tk.Toplevel(root)
+    top.title('Configuration Display')
+    top.geometry('800x600')
+    top.resizable(0, 0)
+    top.grab_set()
+    top.focus_set()
+    top.focus_force()
 
-        graph = tk.Canvas(top, width=200, height=100)
-        graph.pack()
-        graph.grid(row=0, column=0)
-        graph.create_line(0, 0, 200, 100)
-        graph.create_line(0, 100, 200, 0, fill='red', dash=(4, 4))
-        graph.create_rectangle(50, 25, 150, 75, fill='blue')
+    fluo_filter_var = tk.IntVar()
+    fluo_filter_var.set(CONF_DIPLAY["fluo_filter"])
+    filter_var = tk.IntVar()
+    filter_var.set(CONF_DIPLAY["Filter"])
+    normalization_var = tk.StringVar()
+    normalization_var.set(CONF_DIPLAY["Normalization"])
+
+    #check boxes
+    check_norm_corr = tk.Checkbutton(top, text='Fluo Filter', variable=fluo_filter_var, onvalue=True, offvalue=False)
+    check_norm_corr.grid(row=0, column=0)
+    check_conv = tk.Checkbutton(top, text='Filter', variable=filter_var, onvalue=True, offvalue=False)
+    check_conv.grid(row=1, column=0)
+
+    #radio buttons
+    normalization_stat = tk.Radiobutton(top, text='MinMax', variable=normalization_var, value='MinMax')
+    normalization_stat.grid(row=2, column=0)
+    normalization_stat = tk.Radiobutton(top, text='Stat', variable=normalization_var, value='Stat')
+    normalization_stat.grid(row=3, column=0)
+
+
+    load_button = tk.Button(top, text='Use', command=lambda : use_config_display(top, {"fluo_filter": fluo_filter_var.get(), 
+                                                                                "Filter": filter_var.get(), 
+                                                                                "Normalization": normalization_var.get()}))
+    load_button.grid(row=4, column=0)
+
+    close_button = tk.Button(top, text='Close', command=top.destroy)
+    close_button.grid(row=5, column=0)
+
+def use_config_display(top, config):
+    global CONF_DIPLAY
+    for key, value in config.items():
+        CONF_DIPLAY[key] = value
+    top.destroy()
+    return 
+
 
 def gui_norm(x : list, y : list):
-    my = max(y)
-    y = [i/my for i in y]
-    y = fluo_filter(x, y)
+    y = clear_y_V(x, y, CONF_DIPLAY["Filter"], CONF_DIPLAY["Normalization"], CONF_DIPLAY["fluo_filter"])
     return x, y
 
 def display_files(files):
@@ -397,14 +413,22 @@ def display_files(files):
     x, y = gui_norm(x, y)
     name = os.path.basename(WORKING_FILE)
     plt.plot(x, y, label=name)
-    for file in files:
-        try:
-            x, y = load_data(file)
-            x, y = gui_norm(x, y)
-            name = os.path.basename(file)
-            plt.plot(x, y, label=name)
-        except:
-            error_message(tk.Tk(), 'Error loading file: ' + file)
+    if isinstance(files, list) and files[0] != '':
+        for file in files:
+            if '#' in file:
+                continue
+            if '=' in file:
+                file = file.split('=')[0]
+            try:
+                file = file.replace('\t', '')
+                if file[-1] == ' ':
+                    file = file[:-1]
+                x, y = load_data(file)
+                x, y = gui_norm(x, y)
+                name = os.path.basename(file)
+                plt.plot(x, y, label=name)
+            except:
+                error_message(tk.Tk(), 'Error loading file: ' + file)
     plt.legend()
     plt.show()
 
@@ -434,7 +458,10 @@ def display_filex(root):
         scrollb.grid(row=0, column=1, sticky='nsew')
         txt['yscrollcommand'] = scrollb.set
 
-        # display button
+        #configuration button
+        conf_button = tk.Button(top, text='Config', command=lambda : configuration_display(top))
+        conf_button.pack(side='bottom')
+
         display_button = tk.Button(top, text='Display', command=lambda : display_files(txt.get('1.0', 'end').splitlines()))
         display_button.pack(side='bottom')
     else:
@@ -492,8 +519,6 @@ def select_file(root, display = False, file_box = None):
     X, Y = x, y
     FILE_LOADED = True
     WORKING_FILE = file
-    if display:
-        display_graph(root, x, y)
     #refresh the file box
     if file_box:
         file_box.delete(0, 'end')

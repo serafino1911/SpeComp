@@ -32,7 +32,7 @@ def main_window_tk():
     display_button.grid(row=3, column=1)
 
     root.mainloop()
-    #tk.mainloop()
+
 
 
 if __name__ == '__main__':
