@@ -138,7 +138,6 @@ def load_configuration(top, root):
     OPEN_CONFIG = False
     configuration_window(root)
 
-
 def configuration_window(root):
     global OPEN_CONFIG
     OPEN_CONFIG = True
@@ -273,7 +272,6 @@ def configuration_window(root):
     load_button = tk.Button(top, text='Load', command=lambda : load_configuration(top, root))
     load_button.grid(row=16, column=3)
 
-
 def loading_window(event):
     global OPEN_LOADING
     OPEN_LOADING = True
@@ -282,17 +280,27 @@ def loading_window(event):
     top.title('Loading')
     top.geometry('300x200')
     top.resizable(0, 0)
+
+    text = tk.Label(top, text='Loading')
+    #centet the text
+    text.pack()
+    giro = ["__", "\\", "|", "/"]
     while not event.is_set():
         top.grab_set()
         top.focus_set()
         top.focus_force()
         top.update()
+        # rotating text
+
+        for i in range(4):
+            text['text']  = 'Loading ' + giro[i]
+            top.update()
+            time.sleep(0.2)
         time.sleep(0.2)
 
     top.destroy()
     OPEN_LOADING = False
     return
-
 
 def start(root):
     if OPEN_CONFIG or OPEN_LOAD or OPEN_SAVE:
@@ -317,7 +325,7 @@ def show_results(root, main_fin):
     top = tk.Toplevel(root)
     top.title('Results')
     top.geometry('800x600')
-    top.resizable(0, 0)
+    top.resizable(1, 1)
     top.grab_set()
     top.focus_set()
     top.focus_force()
@@ -403,7 +411,6 @@ def use_config_display(top, config):
     top.destroy()
     return 
 
-
 def gui_norm(x : list, y : list):
     y = clear_y_V(x, y, CONF_DIPLAY["Filter"], CONF_DIPLAY["Normalization"], CONF_DIPLAY["fluo_filter"])
     return x, y
@@ -415,7 +422,8 @@ def display_files(files):
     plt.plot(x, y, label=name)
     if isinstance(files, list) and files[0] != '':
         for file in files:
-            if '#' in file:
+            # if file starts with #
+            if file[0] == '#' or len(file) < 5 :
                 continue
             if '=' in file:
                 file = file.split('=')[0]
@@ -466,7 +474,6 @@ def display_filex(root):
         display_button.pack(side='bottom')
     else:
         error_message(root, 'First load a file')
-
 
 def up_menu(root, file_box):
     menu = tk.Menu(root)
@@ -565,28 +572,43 @@ def limit_data(root):
     ex_use_button.grid(row=1, column=5)
 
 def use_limit(root, minim, maxim):
+    # Get the global variable MAX_MIN
     global MAX_MIN
+    # Check if both entries minim and maxim are not empty
     if minim.get() and maxim.get():
+        # Try to convert the string in the entries to float
         try:
             MAX_MIN[0] = float(minim.get())
             MAX_MIN[1] = float(maxim.get())
-            error_message(root, 'Max e Min set', title='Success')
         except:
+            # If the conversion is not successful, an error message is shown
             error_message(root, 'Invalid number')
+            # If the conversion is not successful, the global variable MAX_MIN is set to None
+            MAX_MIN = [None, None]
     else:
+        # If one or both entries are empty, the global variable MAX_MIN is set to None
         MAX_MIN = [None, None]
 
 def use_exclusion(root, ex_minim, ex_maxim):
     global MAX_MIN_EX
+    # check if both entry boxes are filled
     if ex_minim.get() and ex_maxim.get():
         try:
-            MAX_MIN_EX[0] = float(ex_minim.get())
-            MAX_MIN_EX[1] = float(ex_maxim.get())
-            # open page with a message
-            error_message(root, 'Exclusion zone set', title='Success')
-
+            # try to convert the values to floats
+            max_excl = float(ex_maxim.get())
+            min_excl = float(ex_minim.get())
+            if max_excl >= min_excl:
+                # if the minimum exclusion zone is smaller than the maximum, assign the values
+                MAX_MIN_EX[0] = min_excl
+                MAX_MIN_EX[1] = max_excl
+                # open page with a message
+            else:
+                # if the maximum exclusion zone is smaller than the minimum, open page with error message
+                error_message(root, 'Invalid number')
         except:
+            # if an error occurs, open page with error message
             error_message(root, 'Invalid number')
     else:
+        # if one of the entry boxes is not filled, set the exclusion zone to None
         MAX_MIN_EX = [None, None]
 
