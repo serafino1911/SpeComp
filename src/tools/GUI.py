@@ -32,6 +32,10 @@ def main_window_tk():
     display_button = tk.Button(root, text='Display', command=lambda : gf.display_filex(root))
     display_button.grid(row=3, column=1)
 
+    #modyfication button
+    mod_button = tk.Button(root, text='Modify', command=lambda : gf.modify_enter(root))
+    mod_button.grid(row=3, column=2)
+
     root.mainloop()
 
 

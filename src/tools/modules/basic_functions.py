@@ -7,11 +7,15 @@ def database_files(base_dir):
     return file_list
 
 def load_data(path):
-    with open(path, 'r') as f:
-        data = f.readlines()
-        data = [line.split() for line in data]
-        x = [float(line[0]) for line in data]
-        y = [float(line[1]) for line in data]
+    if isinstance(path, list):
+        x = [i[0] for i in path]
+        y = [i[1] for i in path]
+    else:
+        with open(path, 'r') as f:
+            data = f.readlines()
+            data = [line.split() for line in data]
+            x = [float(line[0]) for line in data]
+            y = [float(line[1]) for line in data]
     return x, y
 
 def clear_y(y_test, guassian_filter : int = 0, normalization : str = 'MinMax'):
@@ -27,7 +31,8 @@ def clear_y(y_test, guassian_filter : int = 0, normalization : str = 'MinMax'):
 
 def clear_y_V(x_test, y_test, guassian_filter : bool = True, normalization : str = 'MinMax', fluo_filter_bool : bool = False):
     if fluo_filter_bool:
-        y_test = fluo_filter(x_test, y_test)    
+        #y_test = fluo_filter(x_test, y_test)  
+        y_test = remove_peaks(y_test) 
     if guassian_filter:
         y_test = scipy.ndimage.filters.gaussian_filter1d(y_test, 3) 
     if normalization == 'MinMax':
@@ -43,6 +48,19 @@ def fluo_filter(x, y, *args, **kwargs):
     f = np.poly1d(z)
     return y - f(x) * 0.7
 
+import numpy as np
+from scipy.signal import savgol_filter, medfilt
+
+# Define a function to remove Gaussian or pseudo-Gaussian peaks from a spectrum
+def remove_peaks(spectrum):
+    # Smooth the spectrum using a Savitzky-Golay filter
+    smoothed_spectrum = savgol_filter(spectrum, 401, 3)
+    
+    # Subtract the smoothed spectrum from the original spectrum
+    denoised_spectrum = spectrum - smoothed_spectrum
+    
+    # Return the denoised spectrum
+    return denoised_spectrum
 
 def select_intervall(x_1, y_1, x_2, y_2,min_max : list = [None,None], exclusion_zone : list = [None,None]):
     if len(x_1) != len(y_1) or len(x_2) != len(y_2):
