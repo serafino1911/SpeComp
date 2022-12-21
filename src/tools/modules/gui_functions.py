@@ -612,3 +612,197 @@ def use_exclusion(root, ex_minim, ex_maxim):
         # if one of the entry boxes is not filled, set the exclusion zone to None
         MAX_MIN_EX = [None, None]
 
+def modify_enter(root):
+    top = tk.Toplevel(root)
+    top.title('Modify Enter')
+    top.geometry('550x250')
+    top.resizable(False, False)
+    top.focus_set()
+    top.grab_set()
+
+    # button check for guassian filter
+    check_gauss = tk.IntVar()
+    check_gauss_button = tk.Checkbutton(top, text='Gaussian Filter (odd)', variable=check_gauss)
+    check_gauss_button.grid(row=0, column=0)
+
+    # value for the gaussian filter
+    gauss_value = tk.StringVar()
+    gauss_entry = tk.Entry(top, textvariable=gauss_value)
+    gauss_entry.grid(row=0, column=1)
+    gauss_entry.insert(0, '3')
+
+    # button for baseline correction
+    check_base = tk.IntVar()
+    button_baseline = tk.Checkbutton(top, text='Baseline Correction', variable=check_base)
+    button_baseline.grid(row=1, column=0)
+
+    #label for the baseline correction
+    baseline_label = tk.Label(top, text='window_length (odd)')
+    baseline_label.grid(row=1, column=1)
+    # value for the baseline correction
+
+    baseline_value = tk.StringVar()
+    baseline_entry = tk.Entry(top, textvariable=baseline_value)
+    baseline_entry.grid(row=1, column=2)
+    baseline_entry.insert(0, '401')
+
+    #label for the baseline correction
+    poly_label = tk.Label(top, text='polyorder')
+    poly_label.grid(row=2, column=1)
+    # value for the baseline correction
+
+    poly_value = tk.StringVar()
+    poly_entry = tk.Entry(top, textvariable=poly_value)
+    poly_entry.grid(row=2, column=2)
+    poly_entry.insert(0, '3')
+
+    #diff label
+    diff_label = tk.Label(top, text='Diff')
+    diff_label.grid(row=3, column=0)
+    #diff value
+    diff_value = tk.StringVar()
+    diff_entry = tk.Entry(top, textvariable=diff_value)
+    diff_entry.grid(row=3, column=1)
+    diff_entry.insert(0, '10')
+
+    #Display checkboxs
+    displayoriginal_check = tk.IntVar()
+    display_check_button = tk.Checkbutton(top, text='Display Orginal', variable=displayoriginal_check)
+    display_check_button.grid(row=5, column=0)
+
+    displaymodified_check = tk.IntVar()
+    display_check_button = tk.Checkbutton(top, text='Display Baseline', variable=displaymodified_check)
+    display_check_button.grid(row=6, column=0)
+
+    displaydifference_check = tk.IntVar()
+    display_check_button = tk.Checkbutton(top, text='Display Difference', variable=displaydifference_check)
+    display_check_button.grid(row=7, column=0)
+
+    diplaygau_check = tk.IntVar()
+    display_check_button = tk.Checkbutton(top, text='Display Filtered', variable=diplaygau_check) 
+    display_check_button.grid(row=8, column=0)
+
+    check_boxes = [displayoriginal_check, diplaygau_check, displaymodified_check, displaydifference_check]
+
+
+
+    #button use all
+    use_all_button = tk.Button(top, text='Display', command=lambda : use_all(top, check_gauss, gauss_value, check_base, baseline_value, poly_value, diff_value, 'Diplay', check_boxes))
+    use_all_button.grid(row=4, column=0)
+
+    #button save modified
+    save_modified_button = tk.Button(top, text='Save Modified', command=lambda : use_all(top, check_gauss, gauss_value, check_base, baseline_value, poly_value, diff_value, 'SaveMod'))
+    save_modified_button.grid(row=4, column=1)
+
+    #save difference
+    save_diff_button = tk.Button(top, text='Save Difference', command=lambda : use_all(top, check_gauss, gauss_value, check_base, baseline_value, poly_value, diff_value, 'SaveDiff'))
+    save_diff_button.grid(row=4, column=2)
+
+    # use
+    use_button = tk.Button(top, text='Use', command=lambda : use_all(top, check_gauss, gauss_value, check_base, baseline_value, poly_value, diff_value, 'USE'))
+    use_button.grid(row=4, column=3)
+
+
+
+
+def use_all(top, check_gauss, gauss_value, check_base, baseline_value, poly_value, diff_value, Wat, check_boxes=None):
+    global WORKING_FILE
+    if diff_value.get():
+        try:
+            DIFF = float(diff_value.get())
+        except:
+            error_message(top, 'Invalid number')
+            DIFF = None
+
+    if check_gauss.get():
+        try:
+            GAUSSIAN_FILTER = int(gauss_value.get())
+            if GAUSSIAN_FILTER % 2 == 0:
+                error_message(top, 'Invalid gaussian filter number')
+                GAUSSIAN_FILTER = None
+        except:
+            error_message(top, 'Invalid number')
+            GAUSSIAN_FILTER = None
+    else:
+        GAUSSIAN_FILTER = None
+
+    if check_base.get():
+        try:
+            BASELINE_CORRECTION = int(baseline_value.get())
+            if BASELINE_CORRECTION % 2 == 0:
+                error_message(top, 'Invalid window_length number')
+                BASELINE_CORRECTION = None
+        except:
+            error_message(top, 'Invalid number')
+            BASELINE_CORRECTION = None
+    else:
+        BASELINE_CORRECTION = None
+
+    if check_base.get():
+        try:
+            POLYORDER = int(poly_value.get())
+        except:
+            error_message(top, 'Invalid number')
+            POLYORDER = None
+
+    if FILE_LOADED:
+        x_a, y_a = load_data(WORKING_FILE)
+    else:
+        error_message(top, 'No data loaded')
+        return
+    
+    y_m = y_a
+    y_g = y_a
+
+    if GAUSSIAN_FILTER and check_gauss.get():
+        y_g = scipy.ndimage.filters.gaussian_filter1d(y_a, GAUSSIAN_FILTER)
+
+    if BASELINE_CORRECTION and check_base.get():
+        y_m = savgol_filter(y_g, BASELINE_CORRECTION, POLYORDER)
+    
+    y_m = [val - DIFF for val in y_m]
+    
+    try:
+        y_n = y_g - y_m
+    except:
+        y_n = [a-b for a, b in zip(y_g, y_m)]
+
+    if Wat == 'Diplay':
+        checki = [box.get() for box in check_boxes]
+        if not checki[0]:
+            y_a = None
+        if not checki[1]:
+            y_g = None
+        if not checki[2]:
+            y_m = None
+        if not checki[3]:
+            y_n = None
+        mid_display(x_a, y_a, y_g, y_m, y_n)
+
+    elif Wat == 'SaveMod':
+        save_data(x_a, y_m)
+
+    elif Wat == 'SaveDiff':
+        save_data(x_a, y_n)
+
+    elif Wat == 'USE':
+        WORKING_FILE = [[x_a[i], y_n[i] ] for i in range(len(x_a))]
+
+def save_data(x, y):
+    save_file = filedialog.asksaveasfilename(defaultextension='.txt', filetypes=[('Text file', '*.txt')])
+    if save_file:
+        with open(save_file, 'w') as f:
+            for i in range(len(x)):
+                f.write(str(x[i]) + '\t' + str(y[i]) + '\n')
+
+def mid_display(x, y_1 = None, y_g= None, y_2= None, y_3= None):
+    if y_1 != None:
+        plt.plot(x, y_1, label='Original')
+    if y_g is not None:
+        plt.plot(x, y_g, label='Gaussian')
+    if y_2 is not None:
+        plt.plot(x, y_2, label='Baseline')
+    if y_3 is not None:
+        plt.plot(x, y_3, label='Difference')
+    plt.legend()
+    plt.show()
