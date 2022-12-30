@@ -159,98 +159,113 @@ def configuration_window(root):
     fluo_filter_var = tk.IntVar(value = USE_INDEXES["Fluo_filter"])
     db_var = tk.StringVar(value = USE_INDEXES["DB"])
 
+    rown = 0
     # check boxes
     check_norm_corr = tk.Checkbutton(top, text='Normalised Correlation')
-    check_norm_corr.grid(row=0, column=0, sticky='w')
+    check_norm_corr.grid(row=rown, column=0, sticky='w')
     check_norm_corr.config(variable=check_norm_corr_var)
     if USE_INDEXES["NORM_CORR"]:
         check_norm_corr.select()
+    rown += 1
     
 
     check_conv = tk.Checkbutton(top, text='Convolution')
-    check_conv.grid(row=1, column=0, sticky='w')
+    check_conv.grid(row=rown, column=0, sticky='w')
     check_conv.config(variable=check_conv_var)
     if USE_INDEXES["CONV"]:
         check_conv.select()
+    rown += 1
 
     check_fft_conv = tk.Checkbutton(top, text='FFT Convolution')
-    check_fft_conv.grid(row=2, column=0, sticky='w')
+    check_fft_conv.grid(row=rown, column=0, sticky='w')
     check_fft_conv.config(variable=check_fft_conv_var)
     if USE_INDEXES["FFT_CONV"]:
         check_fft_conv.select()
+    rown += 1
 
     check_hqi = tk.Checkbutton(top, text='Hit Quality Index')
-    check_hqi.grid(row=3, column=0, sticky='w')
+    check_hqi.grid(row=rown, column=0, sticky='w')
     check_hqi.config(variable=check_hqi_var)
     if USE_INDEXES["HQI"]:
         check_hqi.select()
+    rown += 1
 
     check_discr = tk.Checkbutton(top, text='Discrete Wavelet Transform')
-    check_discr.grid(row=4, column=0, sticky='w')
+    # check_discr.grid(row=rown, column=0, sticky='w')
     check_discr.config(variable=check_discr_var)
-    if USE_INDEXES["DISCR"]:
-        check_discr.select()
+    # if USE_INDEXES["DISCR"]:
+    #     check_discr.select()
+    # rown += 1
 
     check_corre = tk.Checkbutton(top, text='Correlation')
-    check_corre.grid(row=5, column=0, sticky='w')
+    check_corre.grid(row=rown, column=0, sticky='w')
     check_corre.config(variable=check_corre_var)
     if USE_INDEXES["CORRE"]:
         check_corre.select()
+    rown += 1
 
     check_diff = tk.Checkbutton(top, text='Differentiation')
-    check_diff.grid(row=6, column=0, sticky='w')
+    check_diff.grid(row=rown, column=0, sticky='w')
     check_diff.config(variable=check_diff_var)
     if USE_INDEXES["DIFF"]:
         check_diff.select()
+    rown += 1
 
     # Normalization
     normalization_label = tk.Label(top, text='Normalization')
-    normalization_label.grid(row=7, column=0, sticky='w')
+    normalization_label.grid(row=rown, column=0, sticky='w')
+    rown += 1
 
     normalization_stat = tk.Radiobutton(top, text='Statistical', variable=normalization_var, value='Stat')
-    normalization_stat.grid(row=8, column=0, sticky='w')
+    normalization_stat.grid(row=rown, column=0, sticky='w')
     if normalization_var.get() == 'Stat':
         normalization_stat.select()
     else:
         normalization_stat.deselect()
+    rown += 1
 
 
     normalization_max = tk.Radiobutton(top, text='MaxMin', variable=normalization_var, value='MaxMin')
-    normalization_max.grid(row=9, column=0, sticky='w')
+    normalization_max.grid(row=rown, column=0, sticky='w')
     #radio button delelected by default
     if normalization_var.get() == 'MaxMin':
         normalization_max.select()
     else:
         normalization_max.deselect()
+    rown += 1
 
     list_results_label = tk.Label(top, text='List results')
-    list_results_label.grid(row=10, column=0, sticky='w')
+    list_results_label.grid(row=rown, column=0, sticky='w')
+    rown += 1
 
     list_results = tk.Spinbox(top, from_=1, to=100, width=5, textvariable=list_results_var)
-    list_results.grid(row=11, column=0, sticky='w')
+    list_results.grid(row=rown, column=0, sticky='w')
+    rown += 1
 
     # Filter tk.checkbutton
     check_filter = tk.Checkbutton(top, text='Filter')
-    check_filter.grid(row=12, column=0, sticky='w')
+    check_filter.grid(row=rown, column=0, sticky='w')
     check_filter.config(variable=filter_var)
     if USE_INDEXES["Filter"]:
         check_filter.select()
+    rown += 1
 
     check_fluo_filter = tk.Checkbutton(top, text='Fluorescence Filter beta')
-    check_fluo_filter.grid(row=13, column=0, sticky='w')
+    check_fluo_filter.grid(row=rown, column=0, sticky='w')
     check_fluo_filter.config(variable=fluo_filter_var)
     if USE_INDEXES["Fluo_filter"]:
         check_fluo_filter.select()
+    rown += 1
 
     # select folder
     
-    folder_label = tk.Label(top, text= 'Database Folder: ').grid(row=15, column=0)
+    folder_label = tk.Label(top, text= 'Database Folder: ').grid(row=rown, column=0)
     folder_entry = tk.Entry(top)#.grid(row=0, column =1)
-    folder_entry.grid(row=15, column =1)
+    folder_entry.grid(row=rown, column =1)
     if USE_INDEXES["DB"]:
         folder_entry.insert(0, USE_INDEXES["DB"])
-    folder_button = tk.Button(top, text = "Browse", command= lambda: folder_entry.insert(0, filedialog.askdirectory())).grid(row=15, column =2)
-
+    folder_button = tk.Button(top, text = "Browse", command= lambda: folder_entry.insert(0, filedialog.askdirectory())).grid(row=rown, column =2)
+    rown += 1
 
 
     # save the checks
