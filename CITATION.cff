@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: 'If you use this software, please cite it as below.'
+title: 'SpeComp'
+abstract: 'A Python software for the comparisons of spectra'
+authors : 
+  - family-names: 'Santostefano'
+    given-names: 'Matteo'
+    affiliation: 'PM_TEN srl, Piazza della Vittoria 7/14, 16121, Genoa, Italy'
