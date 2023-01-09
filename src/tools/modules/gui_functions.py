@@ -299,7 +299,7 @@ def loading_window(event):
     text = tk.Label(top, text='Loading')
     #centet the text
     text.pack()
-    giro = ["__", "\\", "|", "/"]
+    giro = ["⢿", "⣻", "⣽", "⣾", "⣷", "⣯", "⣟", "⡿"]
     while not event.is_set():
         top.grab_set()
         top.focus_set()
@@ -307,11 +307,11 @@ def loading_window(event):
         top.update()
         # rotating text
 
-        for i in range(4):
+        for i in range(8):
             text['text']  = 'Loading ' + giro[i]
             top.update()
             time.sleep(0.2)
-        time.sleep(0.2)
+        time.sleep(0.1)
 
     top.destroy()
     OPEN_LOADING = False
@@ -377,7 +377,7 @@ def show_results(root, main_fin):
 
 def save_results(main_fin): 
     file = filedialog.asksaveasfilename(initialdir = BASE_DIR, title = "Select file", filetypes = (("txt files","*.txt"),("all files","*.*")))
-    with open(file + '.txt', 'w') as f:
+    with open(file.replace('.txt', '') + '.txt', 'w') as f:
         for key, lista in main_fin.items():
             f.write(f'{key}: \n\t' + '\n\t'.join( [ str(val[0]).replace('/', '\\\\') + ' = ' + str(val[1]) for val in lista] ) + ' \n\n')
 
@@ -439,6 +439,10 @@ def display_files(files):
         for file in files:
             # if file starts with #
             if file[0] == '#' or len(file) < 5 :
+                continue
+            if not file:
+                continue
+            if not os.path.isfile(file):
                 continue
             if '=' in file:
                 file = file.split('=')[0]
