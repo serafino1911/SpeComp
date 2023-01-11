@@ -442,8 +442,6 @@ def display_files(files):
                 continue
             if not file:
                 continue
-            if not os.path.isfile(file):
-                continue
             if '=' in file:
                 file = file.split('=')[0]
             try:
