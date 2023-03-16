@@ -1,5 +1,6 @@
 from modules.importer import *
 from modules.basic_functions import *
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 BASE_DIR = 'data\\DB'
 
@@ -117,11 +118,11 @@ FUNCTIONS = {"NORM_CORR" : norm_correlation ,
                 "CORRE" : correlate_correlation,
                 "DIFF" : difference}
 
-def compare_v(file_loaded, use_indexes, file_list, min_max, exclusion_zone, delta):
+def compare_v_b(file_loaded, use_indexes, file_list, min_max, exclusion_zone, delta):
     max_list = use_indexes.get("List_results")
     extern_data = {pos: [] for pos in POSSIBILITIES if use_indexes.get(pos)}
     x_u_i, y_u_i = load_data(file_loaded)
-
+    
     for file in file_list:
         x2, y2 = load_data(file)
         x_u, y_u, x2, y2 = pre_elaboration_V(x_u_i, y_u_i, x2, y2, delta, use_indexes.get("Filter"), use_indexes.get("Normalization"), min_max, exclusion_zone)
@@ -143,6 +144,39 @@ def compare_v(file_loaded, use_indexes, file_list, min_max, exclusion_zone, delt
         extern_data[ex] = value_
     return extern_data
 
+
+def compare_v(file_loaded, use_indexes, file_list, min_max, exclusion_zone, delta):
+    max_list = use_indexes.get("List_results")
+    extern_data = {pos: [] for pos in POSSIBILITIES if use_indexes.get(pos)}
+    ex_d = extern_data.copy()
+    x_u_i, y_u_i = load_data(file_loaded)
+    with ThreadPoolExecutor() as executor:
+        futures = [executor.submit(compare_v_thread, file, x_u_i, y_u_i, delta, use_indexes, min_max, exclusion_zone, ex_d) for file in file_list]
+        for future in as_completed(futures):
+            for ex, value in future.result().items():
+                extern_data[ex] += value
+
+    for ex, value_ in extern_data.items():
+        if ex in REVERSE:
+            value_.sort(key=lambda tup: tup[1], reverse=True)
+        else:
+            value_.sort(key=lambda tup: tup[1], reverse=False)
+        value_ = value_[:max_list]
+        extern_data[ex] = value_
+    return extern_data
+
+
+def compare_v_thread(file, x_u_i, y_u_i, delta, use_indexes, min_max, exclusion_zone, extern_data):
+    x2, y2 = load_data(file)
+    x_u, y_u, x2, y2 = pre_elaboration_V(x_u_i, y_u_i, x2, y2, delta, use_indexes.get("Filter"), use_indexes.get("Normalization"), min_max, exclusion_zone)
+    thread_data = {ex: [] for ex in extern_data}
+    for ex, value in thread_data.items():
+        corr = FUNCTIONS[ex](y_u, y2)
+        if ex in INTEGRAL:
+            normal = FUNCTIONS[ex](y_u, y_u)
+            corr = corr/normal
+        value.append((file, round(corr, 3)))
+    return thread_data
 
 def compare(path1, file_list):
     result_norm = []
