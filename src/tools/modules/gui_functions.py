@@ -3,6 +3,7 @@ from modules.basic_functions import *
 import comarator as comp
 
 WORKING_FILE = None
+FILTER_FILE = None
 OPEN_CONFIG = False
 OPEN_LOAD = False
 OPEN_SAVE = False
@@ -457,6 +458,93 @@ def display_files(files):
     plt.legend()
     plt.show()
 
+def clear_list(file_list : list):
+    new_list = []
+    if isinstance(file_list, list):
+        for file in file_list:
+            # if file starts with #
+            if file[0] == '#' or len(file) < 5 :
+                continue
+            if not file:
+                continue
+            if '=' in file:
+                file = file.split('=')[0]
+            try:
+                file = file.replace('\t', '')
+                if file[-1] == ' ':
+                    file = file[:-1]
+                new_list.append(file)
+            except:
+                error_message(tk.Tk(), 'Error loading file: ' + file)
+    return new_list
+
+
+def display_files2(file_list, n=3, start_idx=0):
+    files = clear_list(file_list)
+    global ax, fig
+    
+    fig, ax = plt.subplots()
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    plot_canvas = fig.add_subplot(1, 1, 1)
+    plot_canvas.autoscale(enable=True, axis='both', tight=True)
+
+
+
+    axnext = plt.axes([0.85, 0.025, 0.1, 0.04])
+    axprev = plt.axes([0.75, 0.025, 0.1, 0.04])
+    axnextn = plt.axes([0.55, 0.025, 0.15, 0.04])
+    axprevn = plt.axes([0.4, 0.025, 0.15, 0.04])
+    bnext = Button(axnext, 'Next')
+    bprev = Button(axprev, 'Prev')
+    bnextn = Button(axnextn, 'Next {} Files'.format(n))
+    bprevn = Button(axprevn, 'Prev {} Files'.format(n))
+    bnext.on_clicked(lambda event: next_file(1))
+    bprev.on_clicked(lambda event: prev_file(1))
+    bnextn.on_clicked(lambda event: next_file(n))
+    bprevn.on_clicked(lambda event: prev_file(n))
+
+    def plot_files(files, start_idx, n):
+        plot_canvas.clear()
+        x, y = load_data(WORKING_FILE)
+        x, y = gui_norm(x, y)
+        name = os.path.basename(WORKING_FILE)
+        plot_canvas.plot(x, y, label=name)
+        if FILTER_FILE:
+            x, y = load_data(FILTER_FILE)
+            x, y = gui_norm(x, y)
+            name = os.path.basename(FILTER_FILE)
+            plot_canvas.plot(x, y, label=name)
+        for i in range(n):
+            idx = start_idx + i
+            if idx < len(files):
+                x, y = load_data(files[idx])
+                x, y = gui_norm(x, y)
+                name = os.path.basename(files[idx])
+                plot_canvas.plot(x, y, label=name)
+        plot_canvas.legend()
+        plt.draw()
+        plt.show()
+
+    def next_file(num_files):
+        nonlocal start_idx
+        start_idx = min(start_idx + num_files, len(files) - n)
+        plot_files(files, start_idx, n)
+
+    def prev_file(num_files):
+        nonlocal start_idx
+        start_idx = max(start_idx - num_files, 0)
+        plot_files(files, start_idx, n)
+
+    plot_files(files, start_idx, n)
+    #plt.show()
+
+
+
+
 def display_filex(root):
     if FILE_LOADED:
     # box where user can paste the files
@@ -473,7 +561,6 @@ def display_filex(root):
         # implement stretchability
         txt_frm.grid_rowconfigure(0, weight=1)
         txt_frm.grid_columnconfigure(0, weight=1)
-        
         # create a Text widget
         txt = tk.Text(txt_frm, borderwidth=3, relief='sunken')
         txt.grid(row=0, column=0, sticky='nsew', padx=2, pady=2)
@@ -487,7 +574,7 @@ def display_filex(root):
         conf_button = tk.Button(top, text='Config', command=lambda : configuration_display(top))
         conf_button.pack(side='bottom')
 
-        display_button = tk.Button(top, text='Display', command=lambda : display_files(txt.get('1.0', 'end').splitlines()))
+        display_button = tk.Button(top, text='Display', command=lambda : display_files2(txt.get('1.0', 'end').splitlines()))###
         display_button.pack(side='bottom')
     else:
         error_message(root, 'First load a file')
@@ -502,6 +589,7 @@ def up_menu(root, file_box):
     #adds a command to the menu option, calling it exit, and the
     #command it runs on event is client_exit
     file.add_command(label='Open..', command=lambda : select_file(root, display=False, file_box=file_box))
+    
     file.add_command(label='Save Graph..', command=hello)
     file.add_command(label='Save Data..', command=hello)
     file.add_command(label='Configuration', command=lambda : configuration_window(root))
@@ -530,7 +618,7 @@ def up_menu(root, file_box):
     # added "file" to our menu
     menu.add_cascade(label='Help', menu=help_)
 
-def select_file(root, display = False, file_box = None):        
+def select_file(root, display = False, file_box = None,):        
     global X, Y
     global FILE_LOADED, WORKING_FILE
 
@@ -547,6 +635,19 @@ def select_file(root, display = False, file_box = None):
     if file_box:
         file_box.delete(0, 'end')
         file_box.insert(0, os.path.basename(WORKING_FILE))
+
+def select_filter_file(root, file_box):
+    global FILTER_FILE
+    base_dir = os.getcwd()
+    if FILTER_FILE:
+        base_dir = os.path.dirname(FILTER_FILE)
+    file = filedialog.askopenfilename(initialdir= base_dir, title='Select File',
+                                        filetypes=(('txt files', '*.txt'), ('all files', '*.*')))
+    FILTER_FILE = file
+    #refresh the file box
+    if file_box:
+        file_box.delete(0, 'end')
+        file_box.insert(0, os.path.basename(FILTER_FILE))
 
 def limit_data(root):
     minim = tk.StringVar()
