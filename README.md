@@ -22,3 +22,4 @@ Project Organization
         └── tools
             └── modules
 
+[Rapid Guide.pptx](https://github.com/serafino1911/SpeComp/files/11122359/Raman.Spectra.Comparator.pptx)
