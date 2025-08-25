@@ -24,4 +24,5 @@ Project Organization
             └── modules
 
 [Rapid Guide_ita.pptx](https://github.com/serafino1911/SpeComp/files/11122359/Raman.Spectra.Comparator.pptx)
+
 [Rapid Guide_eng.pptx](https://github.com/user-attachments/files/21970889/Raman.Spectra.Comparator_ENGL.pptx)
