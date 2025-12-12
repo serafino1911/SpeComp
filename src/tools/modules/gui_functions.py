@@ -509,7 +509,7 @@ def display_subtraction():
     plot_state = {'initialized': False}
     
     # Window size parameter for smart subtraction
-    whole_window_size = len(x_work)
+    whole_window_size = len(x_work) // 2
     window_size = {'value': whole_window_size}
 
     def update_plot():

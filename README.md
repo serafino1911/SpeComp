@@ -14,13 +14,15 @@ Compare unknown spectra against a comprehensive database using multiple correlat
 
 - **Normalized Correlation** - Standard correlation coefficient analysis
 - **Hit Quality Index (HQI)** - Specialized metric for spectral matching quality
-- **Convolution** - Wavelenght-domain convolution matching
+- **Convolution** - Wavelength-domain convolution matching
 - **FFT Convolution** - Fast Fourier Transform-based convolution (faster for large datasets)
 - **Discrete Correlation** - Point-by-point correlation analysis
 - **Correlate Correlation** - Integrated correlation analysis
 - **Difference Metric** - Normalized difference calculation
 
 Each algorithm can be enabled/disabled independently, allowing you to customize the analysis for your specific needs.
+
+📖 **For detailed mathematical descriptions of all algorithms, see [METHODS.md](METHODS.md)**
 
 ### 📊 **Interactive Spectral Visualization**
 
@@ -52,24 +54,12 @@ The Filter Subtraction module provides tools for removing background signals and
    - Best for straightforward background removal
 
 2. **Smart Subtract** 
-   - Wavelength-dependent adaptive subtraction using local least-squares optimization
-   - Assumes that $s(\lambda) \approx t(\lambda) + \beta(\lambda)b(\lambda)$, where:
-     - $s(\lambda)$ = observed spectrum (working file)
-     - $t(\lambda)$ = true sample spectrum
-     - $b(\lambda)$ = background/filter spectrum
-     - $\beta(\lambda)$ = wavelength-dependent scaling factor
-   - The corrected spectrum is: $t(\lambda) = s(\lambda) - \beta(\lambda)b(\lambda)$
-   - For each wavelength $\lambda_0$, uses a sliding window $W$ (adjustable parameter) to solve:
-     
-     $$\beta(\lambda_0) = \min_{\beta} \sum_{\lambda \in W} [s(\lambda) - \beta(\lambda_0)b(\lambda)]^2$$
-   
-   - The optimal scaling factor at each point is:
-     
-     $$\beta(\lambda_0) = \frac{\sum_{W} s(\lambda)b(\lambda)}{\sum_{W} b(\lambda)^2}$$
-   
-   - Window size can be adjusted via the input field (default: all working spectrum, in this case $\beta(\lambda)$ is no longer $\lambda$ dipendent)
+   - Adaptive wavelength-dependent background subtraction using local least-squares optimization
+   - Window size adjustable via input field (default: the whole spectrum, minimum possible 25)
    - Automatically smooths the scaling function to reduce noise
    - Best for varying background contributions across the spectrum
+   - _See [METHODS.md](METHODS.md#smart-subtract-adaptive-weighted-subtraction) for mathematical details_
+   
 #### Manual Peak Editing:
 Interactive peak-by-peak modification with keyboard controls:
 
@@ -108,113 +98,34 @@ Create, save, and load custom analysis configurations including:
 
 ## Installation
 
-### Requirements
+**📦 For detailed installation instructions including automated setup scripts, troubleshooting, and platform-specific guidance, see [INSTALL.md](INSTALL.md)**
 
-- Python 3.7 or higher
-- Required packages (see `requirements.txt`):
-  - numpy
-  - scipy
-  - matplotlib
-  - tkinter (usually included with Python)
+### Quick Start
 
-### Setup
+**Requirements:** Python 3.7 or higher
 
-1. Clone the repository:
+**Automated Installation (Recommended):**
+- **Windows:** Run `install.ps1` in PowerShell
+- **Linux/macOS:** Run `./install.sh` in terminal
+
+**Manual Installation:**
 ```bash
 git clone https://github.com/serafino1911/SpeComp.git
 cd SpeComp
-```
-
-2. Install dependencies:
-```bash
 pip install -r requirements.txt
-```
-
-3. Run the application:
-```bash
 python src/tools/GUI.py
 ```
 
-## Usage Guide
+## Quick Start
 
-### Basic Workflow
+After installation:
 
-1. **Load Your Spectrum**
-   - Click "Load File" and select your unknown spectrum (*.txt file)
-   - The file should contain two columns: wavelength and intensity
+1. **Load your spectrum** - Click "Load File" and select your *.txt file
+2. **Configure settings** - Menu → Configuration (select algorithms, set database path)
+3. **Run comparison** - Click "Start" to analyze
+4. **View results** - Review matches and save results
 
-2. **Configure Analysis Settings** (Optional)
-   - Menu → Configuration
-   - Select desired comparison algorithms
-   - Choose normalization method
-   - Set filtering options
-   - Define wavelength ranges if needed
-
-3. **Load Database**
-   - In Configuration, set the database folder path
-   - The program will automatically scan for all *.txt files
-
-4. **Run Comparison**
-   - Click "Start" to begin the analysis
-   - Results will display the best matches for each enabled algorithm
-
-5. **View Results**
-   - Results are ranked by correlation strength
-   - Each algorithm shows its top matches (configurable number)
-   - Save results to file for documentation
-
-### Advanced Features
-
-#### Filter Subtraction Workflow
-
-1. **Load Working File**: Your spectrum to be processed
-2. **Load Filter File**: Reference background or filter spectrum
-3. **Click "Filter Subtraction"** to open interactive tool
-4. **Choose Method**:
-   - **Simple Subtract**: Quick direct subtraction
-   - **Smart Subtract**: Automatic intelligent scaling
-   - **Manual Peaks**: Fine-tune individual peaks
-5. **Manual Peak Editing**:
-   - Click on a peak to select it
-   - Adjust boundaries with arrow keys
-   - Modify intensity up/down as needed
-   - Press ESC to deselect
-6. **Save**: Export your corrected spectrum
-
-#### Noise Modification
-
-1. Click "Modify noise" to access advanced preprocessing
-2. Configure:
-   - Gaussian filter parameters (odd numbers only)
-   - Baseline correction window length and polynomial order
-   - Differential offset
-3. Preview different processing options
-4. Save modified or difference spectra
-
-#### Display Multiple Spectra
-
-1. Click "Display" to open the multi-spectrum viewer
-2. Paste file paths (one per line) into the text box
-3. Navigate through spectra with Next/Previous buttons
-4. Compare your working file with database entries
-
-## File Format
-
-Spectral data files should be plain text with two tab-separated columns:
-
-```
-wavelength1    intensity1
-wavelength2    intensity2
-wavelength3    intensity3
-...
-```
-
-Example:
-```
-200.5    1250.3
-201.0    1248.7
-201.5    1251.2
-```
+📖 **For detailed usage instructions, workflows, and tips, see [USAGE.md](USAGE.md)**
 
 ## Project Structure
 
@@ -234,39 +145,35 @@ SpeComp/
 │   └── Results/                      # Analysis results (not tracked)
 ├── reports/                          # Generated reports (not tracked)
 ├── requirements.txt                  # Python dependencies
-└── README.md                        # This file
+├── README.md                         # This file (quick overview)
+├── USAGE.md                          # Complete usage guide
+├── METHODS.md                        # Mathematical documentation
+├── INSTALL.md                        # Installation guide
 ```
 
-## Tips & Best Practices
+## File Format
 
-### For Best Comparison Results:
-- Use consistent normalization across all spectra
-- Apply appropriate filtering to reduce noise
-- Define relevant wavelength ranges to focus on diagnostic regions
-- Use exclusion zones to remove problematic spectral regions
-- Enable multiple algorithms to cross-validate results
+Spectral data files should be plain text with two tab-separated columns:
 
-### For Filter Subtraction:
-- Start with Smart Subtract for automatic baseline matching
-- Use Manual Peaks for fine-tuning specific features
-- Adjust peak boundaries carefully to maintain smooth transitions
-- Zoom in for precise editing of small features
-- Save intermediate results to preserve your work
+```
+wavelength    intensity
+200.5         1250.3
+201.0         1248.7
+201.5         1251.2
+```
 
-### For Database Management:
-- Ensure all spectra cover similar wavelength ranges
+📖 **For detailed file format specifications, see [USAGE.md](USAGE.md#file-format)**
 
 ## Troubleshooting
 
-**Program won't start**: Ensure all dependencies are installed (`pip install -r requirements.txt`)
+**Common issues:**
+- **Program won't start**: Ensure all dependencies are installed (`pip install -r requirements.txt`)
+- **Database not found**: Check that the database path in Configuration points to the correct folder
+- **Poor matching results**: Try different normalization methods or enable/disable filtering
+- **Filter subtraction issues**: Ensure working file and filter file have overlapping wavelength ranges
+- **Peak editing not working**: Click "Manual Peaks" button first, then click on a peak to select it
 
-**Database not found**: Check that the database path in Configuration points to the correct folder
-
-**Poor matching results**: Try different normalization methods or enable/disable filtering
-
-**Filter subtraction issues**: Ensure working file and filter file have overlapping wavelength ranges
-
-**Peak editing not working**: Click "Manual Peaks" button first, then click on a peak to select it
+📖 **For more detailed troubleshooting and installation issues, see [INSTALL.md](INSTALL.md#troubleshooting)**
 
 ## Citation
 
@@ -292,7 +199,13 @@ Santostefano, M. (2025). SpeComp: A comprehensive tool for Raman spectroscopy an
 
 ## Documentation
 
-For detailed tutorials and examples:
+### Technical Documentation
+- **[USAGE.md](USAGE.md)** - Complete usage guide with workflows, tips, and best practices
+- **[METHODS.md](METHODS.md)** - Detailed mathematical descriptions of all comparison algorithms and processing methods
+- **[INSTALL.md](INSTALL.md)** - Complete installation guide with automated scripts and troubleshooting
+- **[README2.md](README2.md)** - Comprehensive feature documentation
+
+### Tutorials and Guides
 - [Quick Guide (English) (to be updated)](https://github.com/user-attachments/files/21970889/Raman.Spectra.Comparator_ENGL.pptx)
 - [Quick Guide (Italian) (to be updated)](https://github.com/serafino1911/SpeComp/files/11122359/Raman.Spectra.Comparator.pptx)
 
