@@ -6,7 +6,7 @@ import modules.gui_functions as gf
 def main_window_tk():
     root = tk.Tk()
     root.title('Spectra Comparator')
-    root.geometry('400x400')
+    root.geometry('530x400')
     root.resizable(True, True)
 
     file_var = tk.StringVar()
