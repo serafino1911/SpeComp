@@ -257,7 +257,7 @@ SpeComp/
 If you use SpeComp in your research, please cite:
 
 Santostefano, M. (2025). SpeComp: A comprehensive tool for Raman spectroscopy analysis (Version 2.0) [Computer software]. https://github.com/serafino1911/SpeComp
-```
+
 
 **BibTeX format:**
 ```bibtex
