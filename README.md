@@ -218,7 +218,7 @@ SpeComp/
 │   └── Results/                      # Analysis results (not tracked)
 ├── reports/                          # Generated reports (not tracked)
 ├── requirements.txt                  # Python dependencies
-└── README2.md                        # This file
+└── README.md                        # This file
 ```
 
 ## Tips & Best Practices
