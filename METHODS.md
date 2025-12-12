@@ -407,7 +407,4 @@ $$s'(\lambda) = \max(0, s'(\lambda))$$
 - Savitzky-Golay Filter: Savitzky, A.; Golay, M.J.E. (1964). "Smoothing and Differentiation of Data by Simplified Least Squares Procedures". *Analytical Chemistry*, 36 (8): 1627–39.
 - FFT Convolution: Cooley, James W.; Tukey, John W. (1965). "An algorithm for the machine calculation of complex Fourier series". *Mathematics of Computation*, 19 (90): 297–301.
 
----
 
-*Last Updated: December 2025*  
-*SpeComp Version 2.0*

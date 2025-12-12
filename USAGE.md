@@ -447,5 +447,4 @@ wavelength3    intensity3
 
 ---
 
-*Last Updated: December 2025*  
-*SpeComp Version 2.0*
+

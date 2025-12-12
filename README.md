@@ -223,5 +223,3 @@ For issues, questions, or contributions, please visit the [GitHub repository](ht
 
 ---
 
-**Version**: 2.0  
-**Last Updated**: December 2025
