@@ -61,7 +61,7 @@ The Filter Subtraction module provides tools for removing background signals and
    - The corrected spectrum is: $t(\lambda) = s(\lambda) - \beta(\lambda)b(\lambda)$
    - For each wavelength $\lambda_0$, uses a sliding window $W$ (adjustable parameter) to solve:
      
-     $$\beta(\lambda_0) = \arg\min_{\beta} \sum_{\lambda \in W} [s(\lambda) - \beta(\lambda_0)b(\lambda)]^2$$
+     $$\beta(\lambda_0) = \min_{\beta} \sum_{\lambda \in W} [s(\lambda) - \beta(\lambda_0)b(\lambda)]^2$$
    
    - The optimal scaling factor at each point is:
      
