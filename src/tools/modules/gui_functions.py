@@ -812,14 +812,45 @@ def display_subtraction():
         cid_click = fig.canvas.mpl_connect('button_press_event', on_click)
         cid_key = fig.canvas.mpl_connect('key_press_event', on_key)
         peak_editor['connection_ids'] = [cid_click, cid_key]
+        # Open instruction window
+        def show_instructions():
+            inst_window = tk.Toplevel()
+            inst_window.title('Manual Peak Editing Instructions')
+            inst_window.geometry('500x300')
+            inst_window.resizable(True, True)
+            
+            instructions = """
+    Manual Peak Editing Instructions:
+
+    SELECTING PEAKS:
+    • Click on any peak to select it
+    • Selected peak will be highlighted in red
+
+    ADJUSTING PEAK BOUNDARIES:
+    • LEFT arrow: Expand peak boundary to the left
+    • RIGHT arrow: Expand peak boundary to the right
+    • SHIFT+LEFT: Shrink peak boundary from the left
+    • SHIFT+RIGHT: Shrink peak boundary from the right
+
+    ADJUSTING PEAK INTENSITY:
+    • UP arrow: Increase peak intensity (2% per press)
+    • DOWN arrow: Decrease peak intensity (2% per press)
+
+    OTHER CONTROLS:
+    • ESC: Deselect current peak
+    • Reset button: Restore original data
+    • Save button: Save modified spectrum to file
+            """
+            
+            text_widget = tk.Text(inst_window, wrap=tk.WORD, padx=10, pady=10)
+            text_widget.pack(fill='both', expand=True)
+            text_widget.insert('1.0', instructions)
+            text_widget.config(state='disabled')
+            
+            close_btn = tk.Button(inst_window, text='Close', command=inst_window.destroy)
+            close_btn.pack(pady=5)
         
-        print("Manual peak editing enabled:")
-        print("  - Click on a peak to select it")
-        print("  - LEFT/RIGHT arrows: expand peak boundaries")
-        print("  - SHIFT+LEFT/RIGHT arrows: shrink peak boundaries")
-        print("  - UP/DOWN arrows: increase/decrease intensity")
-        print("  - Press ESC to deselect")
-        print("  - Click 'Reset' to restore original data")
+        show_instructions()
 
     def reset_data(event):
         modified_data['x'] = x_work.copy() if isinstance(x_work, np.ndarray) else list(x_work)
@@ -847,18 +878,21 @@ def display_subtraction():
     ax_manual = plt.axes([0.42, 0.05, 0.15, 0.04])
     ax_reset = plt.axes([0.58, 0.05, 0.15, 0.04])
     ax_save = plt.axes([0.74, 0.05, 0.15, 0.04])
+    ax_zoom = plt.axes([0.9, 0.05, 0.08, 0.04])
 
     btn_simple = Button(ax_simple, 'Simple Subtract')
     btn_smart = Button(ax_smart, 'Smart Subtract')
     btn_manual = Button(ax_manual, 'Manual Peaks')
     btn_reset = Button(ax_reset, 'Reset')
     btn_save = Button(ax_save, 'Save')
+    btn_zoom = Button(ax_zoom, 'Zoom Out')
 
     btn_simple.on_clicked(simple_subtract)
     btn_smart.on_clicked(smart_subtract)
     btn_manual.on_clicked(manual_peaks)
     btn_reset.on_clicked(reset_data)
     btn_save.on_clicked(save_modified)
+    btn_zoom.on_clicked(lambda event: ax.autoscale(enable=True, axis='both', tight=True) or plt.draw())
 
     # Initial plot
     update_plot()
@@ -1122,8 +1156,6 @@ def filter_subtraction(root):
     if WORKING_FILE is None or FILTER_FILE is None:
         error_message(root, "working file and filter missing")
         return
-    
-    # display files on a graph with interactive tools
     display_subtraction()
 
 def modify_enter(root):
