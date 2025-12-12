@@ -256,8 +256,22 @@ SpeComp/
 
 If you use SpeComp in your research, please cite:
 
+Santostefano, M. (2025). SpeComp: A comprehensive tool for Raman spectroscopy analysis (Version 2.0) [Computer software]. https://github.com/serafino1911/SpeComp
 ```
-[Check CITATION.cff for proper citation information]
+
+**BibTeX format:**
+```bibtex
+@software{specomp,
+   title = {SpeComp: A comprehensive tool for Raman spectroscopy analysis},
+   author = {Santostefano, Matteo},
+   organization = {PM_TEN S.r.l},
+   year = {2025},
+   url = {https://github.com/serafino1911/SpeComp},
+   version = {2.0}
+}
+```
+
+**CIF format available at:** [CITATION.cff](CITATION.cff)
 ```
 
 ## Documentation
