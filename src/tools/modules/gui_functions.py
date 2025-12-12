@@ -582,7 +582,7 @@ def display_subtraction():
                 beta[i] = 0.0
 
         # Optional: smooth β(λ) a bit to avoid noise
-        #beta = scipy.signal.savgol_filter(beta, 51, 2, mode='mirror')
+        beta = scipy.signal.savgol_filter(beta, 51, 2, mode='mirror')
 
         # 3. Subtract with wavelength-dependent scaling
         corrected = y_work - beta * y_filt_arr
