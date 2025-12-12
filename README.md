@@ -272,7 +272,7 @@ Santostefano, M. (2025). SpeComp: A comprehensive tool for Raman spectroscopy an
 ```
 
 **CIF format available at:** [CITATION.cff](CITATION.cff)
-```
+
 
 ## Documentation
 
