@@ -6,7 +6,7 @@ import modules.gui_functions as gf
 def main_window_tk():
     root = tk.Tk()
     root.title('Spectra Comparator')
-    root.geometry('530x400')
+    root.geometry('530x300')
     root.resizable(True, True)
 
     file_var = tk.StringVar()
@@ -43,12 +43,11 @@ def main_window_tk():
 
     #modyfication button
     mod_button = tk.Button(root, text='Modify noise', command=lambda : gf.modify_enter(root))
-    mod_button.grid(row=4, column=2)
+    mod_button.grid(row=5, column=0)
 
     #filter subtraction button
     filter_button = tk.Button(root, text='Filter Subtraction', command=lambda : gf.filter_subtraction(root))
-    filter_button.grid(row=5, column=0)
-
+    filter_button.grid(row=5, column=1)
     root.mainloop()
 
 

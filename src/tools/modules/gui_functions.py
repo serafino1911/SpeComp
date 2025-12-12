@@ -507,6 +507,9 @@ def display_subtraction():
     
     # Track if plot has been initialized
     plot_state = {'initialized': False}
+    
+    # Window size parameter for smart subtraction
+    window_size = {'value': 25}
 
     def update_plot():
         # Store current axis limits before clearing (only if already initialized)
@@ -544,27 +547,49 @@ def display_subtraction():
         update_plot()
 
     def smart_subtract(event):
-        # Interpolate filter to match working file x-axis
-        interp_func = scipy.interpolate.interp1d(x_filt, y_filt, kind='linear', 
-                                                  bounds_error=False, fill_value=0)
+        try:
+            window = int(window_size['value'])
+            if window < 1:
+                window = 25
+        except:
+            window = 25
+            
+        # 1. Interpolate filter spectrum to match x-axis
+        interp_func = scipy.interpolate.interp1d(
+            x_filt, y_filt, kind='linear',
+            bounds_error=False, fill_value=0
+        )
         y_filt_interp = interp_func(modified_data['x'])
-        
-        # Find optimal scaling factor for filter
-        # Use the baseline regions to determine the best subtraction intensity
-        y_work_arr = np.array(modified_data['y'])
+
+        y_work = np.array(modified_data['y'])
         y_filt_arr = np.array(y_filt_interp)
-        
-        # Calculate scaling factor based on minimum values (baseline)
-        baseline_work = np.percentile(y_work_arr, 10)
-        baseline_filt = np.percentile(y_filt_arr, 10)
-        
-        if baseline_filt > 0:
-            scale_factor = baseline_work / baseline_filt
-        else:
-            scale_factor = 1.0
-        
-        # Apply smart subtraction with scaling
-        modified_data['y'] = np.maximum(0, y_work_arr - scale_factor * y_filt_arr)
+        n = len(y_work)
+
+        # 2. Compute local scaling β(λ) via sliding-window LS
+        beta = np.zeros(n)
+
+        for i in range(n):
+            lo = max(0, i - window)
+            hi = min(n, i + window + 1)
+
+            bW = y_filt_arr[lo:hi]
+            sW = y_work[lo:hi]
+
+            denom = np.dot(bW, bW)
+            if denom > 1e-12:
+                beta[i] = np.dot(sW, bW) / denom
+            else:
+                beta[i] = 0.0
+
+        # Optional: smooth β(λ) a bit to avoid noise
+        #beta = scipy.signal.savgol_filter(beta, 51, 2, mode='mirror')
+
+        # 3. Subtract with wavelength-dependent scaling
+        corrected = y_work - beta * y_filt_arr
+
+        # clip negative values
+        modified_data['y'] = np.maximum(corrected, 0)
+
         update_plot()
 
     def manual_peaks(event):
@@ -879,6 +904,28 @@ def display_subtraction():
     ax_reset = plt.axes([0.58, 0.05, 0.15, 0.04])
     ax_save = plt.axes([0.74, 0.05, 0.15, 0.04])
     ax_zoom = plt.axes([0.9, 0.05, 0.08, 0.04])
+    
+    # Create window size input for smart subtract
+    ax_window_label = plt.axes([0.1, 0.11, 0.08, 0.03])
+    ax_window_input = plt.axes([0.19, 0.11, 0.06, 0.03])
+    
+    # Add label for window parameter
+    ax_window_label.text(0.5, 0.5, 'Window:', ha='center', va='center', fontsize=9)
+    ax_window_label.axis('off')
+    
+    # Create text box for window input
+    from matplotlib.widgets import TextBox
+    window_textbox = TextBox(ax_window_input, '', initial=str(window_size['value']))
+    
+    def update_window(text):
+        try:
+            val = int(text)
+            if val > 0:
+                window_size['value'] = val
+        except:
+            pass
+    
+    window_textbox.on_submit(update_window)
 
     btn_simple = Button(ax_simple, 'Simple Subtract')
     btn_smart = Button(ax_smart, 'Smart Subtract')

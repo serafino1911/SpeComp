@@ -52,8 +52,24 @@ The Filter Subtraction module provides tools for removing background signals and
    - Best for straightforward background removal
 
 2. **Smart Subtract** 
-   - Work in progress
-
+   - Wavelength-dependent adaptive subtraction using local least-squares optimization
+   - Assumes that $s(\lambda) \approx t(\lambda) + \beta(\lambda)b(\lambda)$, where:
+     - $s(\lambda)$ = observed spectrum (working file)
+     - $t(\lambda)$ = true sample spectrum
+     - $b(\lambda)$ = background/filter spectrum
+     - $\beta(\lambda)$ = wavelength-dependent scaling factor
+   - The corrected spectrum is: $t(\lambda) = s(\lambda) - \beta(\lambda)b(\lambda)$
+   - For each wavelength $\lambda_0$, uses a sliding window $W$ (adjustable parameter) to solve:
+     
+     $$\beta(\lambda_0) = \arg\min_{\beta} \sum_{\lambda \in W} [s(\lambda) - \beta(\lambda_0)b(\lambda)]^2$$
+   
+   - The optimal scaling factor at each point is:
+     
+     $$\beta(\lambda_0) = \frac{\sum_{W} s(\lambda)b(\lambda)}{\sum_{W} b(\lambda)^2}$$
+   
+   - Window size can be adjusted via the input field (default: 25 points)
+   - Automatically smooths the scaling function to reduce noise
+   - Best for varying background contributions across the spectrum
 #### Manual Peak Editing:
 Interactive peak-by-peak modification with keyboard controls:
 
