@@ -42,8 +42,12 @@ def main_window_tk():
     display_button.grid(row=4, column=1)
 
     #modyfication button
-    mod_button = tk.Button(root, text='Modify', command=lambda : gf.modify_enter(root))
+    mod_button = tk.Button(root, text='Modify noise', command=lambda : gf.modify_enter(root))
     mod_button.grid(row=4, column=2)
+
+    #filter subtraction button
+    filter_button = tk.Button(root, text='Filter Subtraction', command=lambda : gf.filter_subtraction(root))
+    filter_button.grid(row=5, column=0)
 
     root.mainloop()
 

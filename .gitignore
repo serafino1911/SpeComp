@@ -23,6 +23,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+.venv/
 build/
 develop-eggs/
 dist/
@@ -102,3 +103,6 @@ bin/
 
 # exclude external models from source control
 /src/external/
+mod.txt
+filter.txt
+file.txt

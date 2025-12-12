@@ -335,7 +335,7 @@ def start(root):
         thread.join()
         if main_fin is not None:
             show_results(root, main_fin)
-        return main_fin
+    return main_fin
 
 def show_results(root, main_fin):
     top = tk.Toplevel(root)
@@ -478,6 +478,391 @@ def clear_list(file_list : list):
                 error_message(tk.Tk(), 'Error loading file: ' + file)
     return new_list
 
+
+def display_subtraction():
+    global WORKING_FILE, FILTER_FILE
+
+    if not WORKING_FILE:
+        error_message(tk.Tk(), 'No working file loaded')
+        return
+    
+    if not FILTER_FILE:
+        error_message(tk.Tk(), 'No filter file loaded')
+        return
+
+    # Load initial data
+    x_work, y_work = load_data(WORKING_FILE)
+    x_work, y_work = gui_norm(x_work, y_work)
+    
+    x_filt, y_filt = load_data(FILTER_FILE)
+    x_filt, y_filt = gui_norm(x_filt, y_filt)
+
+    # Store modified working data
+    modified_data = {'x': x_work.copy() if isinstance(x_work, np.ndarray) else list(x_work), 
+                     'y': y_work.copy() if isinstance(y_work, np.ndarray) else list(y_work)}
+    
+    # Create figure
+    fig, ax = plt.subplots(figsize=(12, 6))
+    plt.subplots_adjust(bottom=0.25)
+    
+    # Track if plot has been initialized
+    plot_state = {'initialized': False}
+
+    def update_plot():
+        # Store current axis limits before clearing (only if already initialized)
+        if plot_state['initialized']:
+            xlim = ax.get_xlim()
+            ylim = ax.get_ylim()
+        
+        ax.clear()
+        ax.plot(x_work, y_work, label=os.path.basename(WORKING_FILE) + ' (Original)', alpha=0.5, linestyle='--')
+        ax.plot(x_filt, y_filt, label=os.path.basename(FILTER_FILE), alpha=0.7)
+        ax.plot(modified_data['x'], modified_data['y'], label='Modified', linewidth=2)
+        ax.set_xlabel('Wavelength')
+        ax.set_ylabel('Intensity')
+        ax.grid(True, alpha=0.3)
+        
+        # Restore axis limits to maintain zoom (only if already initialized)
+        if plot_state['initialized']:
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
+        else:
+            plot_state['initialized'] = True
+        
+        # Update legend without "Selected Peak" if not actively showing
+        ax.legend()
+        plt.draw()
+
+    def simple_subtract(event):
+        # Interpolate filter to match working file x-axis
+        interp_func = scipy.interpolate.interp1d(x_filt, y_filt, kind='linear', 
+                                                  bounds_error=False, fill_value=0)
+        y_filt_interp = interp_func(modified_data['x'])
+        
+        # Subtract and don't go below 0
+        modified_data['y'] = np.maximum(0, np.array(modified_data['y']) - np.array(y_filt_interp))
+        update_plot()
+
+    def smart_subtract(event):
+        # Interpolate filter to match working file x-axis
+        interp_func = scipy.interpolate.interp1d(x_filt, y_filt, kind='linear', 
+                                                  bounds_error=False, fill_value=0)
+        y_filt_interp = interp_func(modified_data['x'])
+        
+        # Find optimal scaling factor for filter
+        # Use the baseline regions to determine the best subtraction intensity
+        y_work_arr = np.array(modified_data['y'])
+        y_filt_arr = np.array(y_filt_interp)
+        
+        # Calculate scaling factor based on minimum values (baseline)
+        baseline_work = np.percentile(y_work_arr, 10)
+        baseline_filt = np.percentile(y_filt_arr, 10)
+        
+        if baseline_filt > 0:
+            scale_factor = baseline_work / baseline_filt
+        else:
+            scale_factor = 1.0
+        
+        # Apply smart subtraction with scaling
+        modified_data['y'] = np.maximum(0, y_work_arr - scale_factor * y_filt_arr)
+        update_plot()
+
+    def manual_peaks(event):
+        # Enable interactive peak modification
+        peak_editor = {'selected_peak': None, 'peak_line': None, 'connection_ids': []}
+        
+        def find_peak_region(center_idx, y_data):
+            """Find the extent of a peak around the center index"""
+            y_arr = np.array(y_data)
+            
+            # Find local minima on both sides
+            left_idx = center_idx
+            right_idx = center_idx
+            
+            # Search left for minimum
+            for i in range(center_idx - 1, max(0, center_idx - 50), -1):
+                if y_arr[i] < y_arr[left_idx]:
+                    left_idx = i
+                elif y_arr[i] < y_arr[left_idx] * 1.1:  # Allow small increases
+                    left_idx = i
+                else:
+                    break
+            
+            # Search right for minimum
+            for i in range(center_idx + 1, min(len(y_arr), center_idx + 50)):
+                if y_arr[i] < y_arr[right_idx]:
+                    right_idx = i
+                elif y_arr[i] < y_arr[right_idx] * 1.1:  # Allow small increases
+                    right_idx = i
+                else:
+                    break
+            
+            return left_idx, right_idx
+        
+        def apply_smooth_scaling(indices, scale_factor, y_data):
+            """Apply scaling to a peak region with smooth blending at edges"""
+            left_idx, right_idx = indices
+            y_arr = np.array(y_data)
+            
+            # Store original baseline values at both edges
+            baseline_left = y_arr[left_idx]
+            baseline_right = y_arr[right_idx]
+            
+            # Calculate the peak region relative to baseline
+            peak_length = right_idx - left_idx + 1
+            blend_width = min(5, peak_length // 4)  # Blend over 5 points or 25% of peak
+            
+            for i in range(left_idx, right_idx + 1):
+                # Calculate distance from edges for blending
+                dist_from_left = i - left_idx
+                dist_from_right = right_idx - i
+                
+                # Calculate blend factor (1.0 in center, smoothly to 0 at edges)
+                if dist_from_left < blend_width:
+                    blend = dist_from_left / blend_width
+                elif dist_from_right < blend_width:
+                    blend = dist_from_right / blend_width
+                else:
+                    blend = 1.0
+                
+                # Interpolate baseline between left and right
+                t = (i - left_idx) / max(1, peak_length - 1)  # Position ratio (0 to 1)
+                baseline = baseline_left * (1 - t) + baseline_right * t
+                
+                # Apply scaling with blending
+                # Subtract baseline, scale, add baseline back
+                relative_height = y_arr[i] - baseline
+                scaled_height = relative_height * (1 + (scale_factor - 1) * blend)
+                modified_data['y'][i] = max(0, baseline + scaled_height)
+            
+        
+        def update_peak_highlight():
+            """Update the visual highlight of the selected peak"""
+            if peak_editor['selected_peak'] is None:
+                return
+            
+            left_idx, right_idx = peak_editor['selected_peak']['indices']
+            
+            # Remove old highlight
+            if peak_editor['peak_line'] is not None:
+                try:
+                    peak_editor['peak_line'].remove()
+                except:
+                    pass
+                peak_editor['peak_line'] = None
+            
+            # Draw new highlight
+            peak_x = [modified_data['x'][i] for i in range(left_idx, right_idx + 1)]
+            peak_y = [modified_data['y'][i] for i in range(left_idx, right_idx + 1)]
+            peak_editor['peak_line'], = ax.plot(peak_x, peak_y, 'r-', linewidth=3, alpha=0.5, label='Selected Peak')
+            ax.legend()
+            plt.draw()
+        
+        def on_click(event_click):
+            if event_click.inaxes != ax:
+                return
+            
+            x_click = event_click.xdata
+            if x_click is None:
+                return
+            
+            # Remove old highlight if exists
+            if peak_editor['peak_line'] is not None:
+                try:
+                    peak_editor['peak_line'].remove()
+                except:
+                    pass
+                peak_editor['peak_line'] = None
+            
+            # Find nearest point
+            x_arr = np.array(modified_data['x'])
+            center_idx = np.argmin(np.abs(x_arr - x_click))
+            
+            # Find the peak region
+            left_idx, right_idx = find_peak_region(center_idx, modified_data['y'])
+            
+            # Store selected peak
+            peak_editor['selected_peak'] = {
+                'indices': (left_idx, right_idx),
+                'center': center_idx,
+                'original_y': [modified_data['y'][i] for i in range(left_idx, right_idx + 1)]
+            }
+            
+            update_peak_highlight()
+            
+            print(f"Peak selected at index {center_idx} (range: {left_idx}-{right_idx}).")
+            print("  LEFT/RIGHT arrows: adjust peak boundaries")
+            print("  UP/DOWN arrows: adjust peak intensity")
+        
+        def on_key(event_key):
+            if peak_editor['selected_peak'] is None:
+                return
+            
+            left_idx, right_idx = peak_editor['selected_peak']['indices']
+            step = 0.02  # 2% adjustment per key press
+            
+            if event_key.key == 'left':
+                # Expand peak region to the left
+                new_left = max(0, left_idx - 1)
+                if new_left < left_idx:
+                    # Store current zoom
+                    xlim = ax.get_xlim()
+                    ylim = ax.get_ylim()
+                    
+                    peak_editor['selected_peak']['indices'] = (new_left, right_idx)
+                    update_peak_highlight()
+                    
+                    # Restore zoom
+                    ax.set_xlim(xlim)
+                    ax.set_ylim(ylim)
+                    print(f"Peak boundary adjusted: {new_left}-{right_idx}")
+                    
+            elif event_key.key == 'right':
+                # Expand peak region to the right
+                new_right = min(len(modified_data['y']) - 1, right_idx + 1)
+                if new_right > right_idx:
+                    # Store current zoom
+                    xlim = ax.get_xlim()
+                    ylim = ax.get_ylim()
+                    
+                    peak_editor['selected_peak']['indices'] = (left_idx, new_right)
+                    update_peak_highlight()
+                    
+                    # Restore zoom
+                    ax.set_xlim(xlim)
+                    ax.set_ylim(ylim)
+                    print(f"Peak boundary adjusted: {left_idx}-{new_right}")
+                    
+            elif event_key.key == 'shift+left':
+                # Shrink peak region from the left
+                new_left = min(right_idx - 1, left_idx + 1)
+                if new_left > left_idx:
+                    # Store current zoom
+                    xlim = ax.get_xlim()
+                    ylim = ax.get_ylim()
+                    
+                    peak_editor['selected_peak']['indices'] = (new_left, right_idx)
+                    update_peak_highlight()
+                    
+                    # Restore zoom
+                    ax.set_xlim(xlim)
+                    ax.set_ylim(ylim)
+                    print(f"Peak boundary adjusted: {new_left}-{right_idx}")
+                    
+            elif event_key.key == 'shift+right':
+                # Shrink peak region from the right
+                new_right = max(left_idx + 1, right_idx - 1)
+                if new_right < right_idx:
+                    # Store current zoom
+                    xlim = ax.get_xlim()
+                    ylim = ax.get_ylim()
+                    
+                    peak_editor['selected_peak']['indices'] = (left_idx, new_right)
+                    update_peak_highlight()
+                    
+                    # Restore zoom
+                    ax.set_xlim(xlim)
+                    ax.set_ylim(ylim)
+                    print(f"Peak boundary adjusted: {left_idx}-{new_right}")
+            
+            elif event_key.key == 'up':
+                # Increase peak intensity with smooth blending
+                apply_smooth_scaling(peak_editor['selected_peak']['indices'], 1 + step, modified_data['y'])
+                
+                # Store current zoom
+                xlim = ax.get_xlim()
+                ylim = ax.get_ylim()
+                
+                update_plot()
+                update_peak_highlight()
+                
+                # Restore zoom
+                ax.set_xlim(xlim)
+                ax.set_ylim(ylim)
+                
+            elif event_key.key == 'down':
+                # Decrease peak intensity with smooth blending
+                apply_smooth_scaling(peak_editor['selected_peak']['indices'], 1 - step, modified_data['y'])
+                
+                # Store current zoom
+                xlim = ax.get_xlim()
+                ylim = ax.get_ylim()
+                
+                update_plot()
+                update_peak_highlight()
+                
+                # Restore zoom
+                ax.set_xlim(xlim)
+                ax.set_ylim(ylim)
+                
+            elif event_key.key == 'escape':
+                # Deselect peak
+                if peak_editor['peak_line'] is not None:
+                    try:
+                        peak_editor['peak_line'].remove()
+                    except:
+                        pass
+                    peak_editor['peak_line'] = None
+                peak_editor['selected_peak'] = None
+                ax.legend()
+                plt.draw()
+                print("Peak deselected.")
+        
+        # Connect events
+        cid_click = fig.canvas.mpl_connect('button_press_event', on_click)
+        cid_key = fig.canvas.mpl_connect('key_press_event', on_key)
+        peak_editor['connection_ids'] = [cid_click, cid_key]
+        
+        print("Manual peak editing enabled:")
+        print("  - Click on a peak to select it")
+        print("  - LEFT/RIGHT arrows: expand peak boundaries")
+        print("  - SHIFT+LEFT/RIGHT arrows: shrink peak boundaries")
+        print("  - UP/DOWN arrows: increase/decrease intensity")
+        print("  - Press ESC to deselect")
+        print("  - Click 'Reset' to restore original data")
+
+    def reset_data(event):
+        modified_data['x'] = x_work.copy() if isinstance(x_work, np.ndarray) else list(x_work)
+        modified_data['y'] = y_work.copy() if isinstance(y_work, np.ndarray) else list(y_work)
+        update_plot()
+
+    def save_modified(event):
+        # Open file dialog to save
+        save_file = filedialog.asksaveasfilename(
+            defaultextension='.txt',
+            initialdir=os.path.dirname(WORKING_FILE),
+            title='Save Modified File',
+            filetypes=[('Text file', '*.txt'), ('All files', '*.*')]
+        )
+        
+        if save_file:
+            with open(save_file, 'w') as f:
+                for i in range(len(modified_data['x'])):
+                    f.write(f"{modified_data['x'][i]}\t{modified_data['y'][i]}\n")
+            print(f"File saved: {save_file}")
+
+    # Create buttons
+    ax_simple = plt.axes([0.1, 0.05, 0.15, 0.04])
+    ax_smart = plt.axes([0.26, 0.05, 0.15, 0.04])
+    ax_manual = plt.axes([0.42, 0.05, 0.15, 0.04])
+    ax_reset = plt.axes([0.58, 0.05, 0.15, 0.04])
+    ax_save = plt.axes([0.74, 0.05, 0.15, 0.04])
+
+    btn_simple = Button(ax_simple, 'Simple Subtract')
+    btn_smart = Button(ax_smart, 'Smart Subtract')
+    btn_manual = Button(ax_manual, 'Manual Peaks')
+    btn_reset = Button(ax_reset, 'Reset')
+    btn_save = Button(ax_save, 'Save')
+
+    btn_simple.on_clicked(simple_subtract)
+    btn_smart.on_clicked(smart_subtract)
+    btn_manual.on_clicked(manual_peaks)
+    btn_reset.on_clicked(reset_data)
+    btn_save.on_clicked(save_modified)
+
+    # Initial plot
+    update_plot()
+    plt.show()
 
 def display_files2(file_list, n=3, start_idx=0):
     files = clear_list(file_list)
@@ -729,6 +1114,17 @@ def use_exclusion(root, ex_minim, ex_maxim):
     else:
         # if one of the entry boxes is not filled, set the exclusion zone to None
         MAX_MIN_EX = [None, None]
+
+
+def filter_subtraction(root):
+    global WORKING_FILE, FILTER_FILE
+    # check if working file and filter file are loaded
+    if WORKING_FILE is None or FILTER_FILE is None:
+        error_message(root, "working file and filter missing")
+        return
+    
+    # display files on a graph with interactive tools
+    display_subtraction()
 
 def modify_enter(root):
     top = tk.Toplevel(root)
