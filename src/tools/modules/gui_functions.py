@@ -509,7 +509,8 @@ def display_subtraction():
     plot_state = {'initialized': False}
     
     # Window size parameter for smart subtraction
-    window_size = {'value': 25}
+    whole_window_size = len(x_work)
+    window_size = {'value': whole_window_size}
 
     def update_plot():
         # Store current axis limits before clearing (only if already initialized)

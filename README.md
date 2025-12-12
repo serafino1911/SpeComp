@@ -67,7 +67,7 @@ The Filter Subtraction module provides tools for removing background signals and
      
      $$\beta(\lambda_0) = \frac{\sum_{W} s(\lambda)b(\lambda)}{\sum_{W} b(\lambda)^2}$$
    
-   - Window size can be adjusted via the input field (default: 25 points)
+   - Window size can be adjusted via the input field (default: all working spectrum, in this case $\beta(\lambda)$ is no longer $\lambda$ dipendent)
    - Automatically smooths the scaling function to reduce noise
    - Best for varying background contributions across the spectrum
 #### Manual Peak Editing:
