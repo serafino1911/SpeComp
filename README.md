@@ -203,7 +203,6 @@ Santostefano, M. (2025). SpeComp: A comprehensive tool for Raman spectroscopy an
 - **[USAGE.md](USAGE.md)** - Complete usage guide with workflows, tips, and best practices
 - **[METHODS.md](METHODS.md)** - Detailed mathematical descriptions of all comparison algorithms and processing methods
 - **[INSTALL.md](INSTALL.md)** - Complete installation guide with automated scripts and troubleshooting
-- **[README2.md](README2.md)** - Comprehensive feature documentation
 
 ### Tutorials and Guides
 - [Quick Guide (English) (to be updated)](https://github.com/user-attachments/files/21970889/Raman.Spectra.Comparator_ENGL.pptx)
