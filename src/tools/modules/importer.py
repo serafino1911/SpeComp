@@ -7,6 +7,7 @@ import math as m
 import matplotlib.pyplot as plt
 import scipy.ndimage
 import tkinter as tk
+from tkinter import ttk
 from tkinter import filedialog
 import threading as th
 import time

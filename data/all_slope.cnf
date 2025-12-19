@@ -1,1 +1,0 @@
-{'NORM_CORR': 1, 'CONV': 1, 'FFT_CONV': 1, 'HQI': 1, 'DISCR': 0, 'CORRE': 1, 'DIFF': 1, 'Normalization': 'MaxMin', 'List_results': 20, 'Filter': 0, 'Fluo_filter': False, 'DB': 0}

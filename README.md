@@ -139,11 +139,6 @@ SpeComp/
 │           ├── basic_functions.py    # Data processing utilities
 │           ├── gui_functions.py      # GUI interaction functions
 │           └── importer.py           # Common imports
-├── data/
-│   ├── DB/                           # Database folder (not tracked)
-│   ├── Unknown/                      # Unknown spectra (not tracked)
-│   └── Results/                      # Analysis results (not tracked)
-├── reports/                          # Generated reports (not tracked)
 ├── requirements.txt                  # Python dependencies
 ├── README.md                         # This file (quick overview)
 ├── USAGE.md                          # Complete usage guide

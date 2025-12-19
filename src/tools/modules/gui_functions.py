@@ -30,7 +30,7 @@ USE_INDEXES = {"NORM_CORR": False,
                 "DISCR" : False,
                 "CORRE" : False,
                 "DIFF" : False,
-                "Normalization" : "Stat",
+                "Normalization" : "MaxMin",
                 "List_results" : 10,
                 "Filter": False,
                 "Fluo_filter": False,
@@ -38,6 +38,7 @@ USE_INDEXES = {"NORM_CORR": False,
                 }
 
 LIST_BOOL = ["NORM_CORR", "CONV", "FFT_CONV", "HQI", "DISCR", "CORRE", "DIFF", "Filter"]
+LIST_FIGURES = ["NORM_CORR", "CONV", "FFT_CONV", "HQI", "DISCR", "CORRE", "DIFF"]
 
 def hello():
     print('hello!')
@@ -97,11 +98,51 @@ def save_configuration(data):
 def error_message(root, message, title = 'Error'):
     top = tk.Toplevel(root)
     top.title(title)
-    top.geometry('300x100')
-    top.resizable(True, True)
-    error = tk.Label(top, text=message)
-    error.pack()
-    error.grid(row=0, column=0)
+    top.geometry('400x180')
+    top.resizable(False, False)
+    top.configure(bg='#f5f6fa')
+    top.transient(root)
+    top.grab_set()
+    
+    # Center the window
+    top.update_idletasks()
+    width = top.winfo_width()
+    height = top.winfo_height()
+    x = (top.winfo_screenwidth() // 2) - (width // 2)
+    y = (top.winfo_screenheight() // 2) - (height // 2)
+    top.geometry(f'{width}x{height}+{x}+{y}')
+    
+    # Main frame
+    main_frame = tk.Frame(top, bg='#f5f6fa', padx=25, pady=20)
+    main_frame.pack(fill='both', expand=True)
+    
+    # Icon
+    icon_label = tk.Label(main_frame, text='⚠️', 
+                          font=('Segoe UI', 32), 
+                          bg='#f5f6fa')
+    icon_label.pack(pady=(0, 10))
+    
+    # Message
+    message_label = tk.Label(main_frame, text=str(message), 
+                            font=('Segoe UI', 10), 
+                            bg='#f5f6fa', fg='#2c3e50',
+                            wraplength=350, justify='center')
+    message_label.pack(pady=(0, 20))
+    
+    # OK button
+    ok_button = tk.Button(main_frame, text='OK', 
+                         command=top.destroy,
+                         font=('Segoe UI', 9, 'bold'), 
+                         bg='#e74c3c', fg='white',
+                         relief='flat', padx=30, pady=8,
+                         cursor='hand2')
+    ok_button.pack()
+    
+    # Focus the button
+    ok_button.focus_set()
+    
+    # Bind Enter key to close
+    top.bind('<Return>', lambda e: top.destroy())
 
 def load_configuration(top, root):
     global USE_INDEXES
@@ -143,10 +184,17 @@ def configuration_window(root):
     global OPEN_CONFIG
     OPEN_CONFIG = True
     top = tk.Toplevel(root)
-    top.title('Configuration')
-    top.geometry('400x400')
-    top.resizable(True, True)
+    top.title('Analysis Configuration')
+    top.geometry('520x660')
+    top.resizable(False, False)
+    top.configure(bg='#f5f6fa')
+    
+    # Keep window on top of parent
+    top.transient(root)
+    top.grab_set()
+    top.focus_set()
 
+    # Variables
     check_norm_corr_var = tk.IntVar(value = USE_INDEXES["NORM_CORR"])
     check_conv_var = tk.IntVar(value = USE_INDEXES["CONV"])
     check_fft_conv_var = tk.IntVar(value = USE_INDEXES["FFT_CONV"])
@@ -160,156 +208,218 @@ def configuration_window(root):
     fluo_filter_var = tk.IntVar(value = USE_INDEXES["Fluo_filter"])
     db_var = tk.StringVar(value = USE_INDEXES["DB"])
 
-    rown = 0
-    # check boxes
-    check_norm_corr = tk.Checkbutton(top, text='Normalised Correlation')
-    check_norm_corr.grid(row=rown, column=0, sticky='w')
-    check_norm_corr.config(variable=check_norm_corr_var)
-    if USE_INDEXES["NORM_CORR"]:
-        check_norm_corr.select()
-    rown += 1
-    
+    # Main container with scrollbar
+    main_frame = tk.Frame(top, bg='#f5f6fa', padx=20, pady=15)
+    main_frame.pack(fill='both', expand=True)
 
-    check_conv = tk.Checkbutton(top, text='Convolution')
-    check_conv.grid(row=rown, column=0, sticky='w')
-    check_conv.config(variable=check_conv_var)
-    if USE_INDEXES["CONV"]:
-        check_conv.select()
-    rown += 1
+    # Analysis Methods Section
+    methods_frame = tk.LabelFrame(main_frame, text='Analysis Methods', 
+                                  font=('Segoe UI', 10, 'bold'),
+                                  bg='#f5f6fa', fg='#2c3e50',
+                                  padx=15, pady=10)
+    methods_frame.pack(fill='x', pady=(0, 10))
 
-    check_fft_conv = tk.Checkbutton(top, text='FFT Convolution')
-    check_fft_conv.grid(row=rown, column=0, sticky='w')
-    check_fft_conv.config(variable=check_fft_conv_var)
-    if USE_INDEXES["FFT_CONV"]:
-        check_fft_conv.select()
-    rown += 1
+    check_norm_corr = tk.Checkbutton(methods_frame, text='Normalised Correlation',
+                                     variable=check_norm_corr_var, bg='#f5f6fa',
+                                     font=('Segoe UI', 9))
+    check_norm_corr.pack(anchor='w', pady=2)
 
-    check_hqi = tk.Checkbutton(top, text='Hit Quality Index')
-    check_hqi.grid(row=rown, column=0, sticky='w')
-    check_hqi.config(variable=check_hqi_var)
-    if USE_INDEXES["HQI"]:
-        check_hqi.select()
-    rown += 1
+    check_conv = tk.Checkbutton(methods_frame, text='Convolution',
+                                variable=check_conv_var, bg='#f5f6fa',
+                                font=('Segoe UI', 9))
+    check_conv.pack(anchor='w', pady=2)
 
-    check_discr = tk.Checkbutton(top, text='Discrete Wavelet Transform')
-    # check_discr.grid(row=rown, column=0, sticky='w')
-    check_discr.config(variable=check_discr_var)
-    # if USE_INDEXES["DISCR"]:
-    #     check_discr.select()
-    # rown += 1
+    check_fft_conv = tk.Checkbutton(methods_frame, text='FFT Convolution',
+                                    variable=check_fft_conv_var, bg='#f5f6fa',
+                                    font=('Segoe UI', 9))
+    check_fft_conv.pack(anchor='w', pady=2)
 
-    check_corre = tk.Checkbutton(top, text='Correlation')
-    check_corre.grid(row=rown, column=0, sticky='w')
-    check_corre.config(variable=check_corre_var)
-    if USE_INDEXES["CORRE"]:
-        check_corre.select()
-    rown += 1
+    check_hqi = tk.Checkbutton(methods_frame, text='Hit Quality Index',
+                               variable=check_hqi_var, bg='#f5f6fa',
+                               font=('Segoe UI', 9))
+    check_hqi.pack(anchor='w', pady=2)
 
-    check_diff = tk.Checkbutton(top, text='Differentiation')
-    check_diff.grid(row=rown, column=0, sticky='w')
-    check_diff.config(variable=check_diff_var)
-    if USE_INDEXES["DIFF"]:
-        check_diff.select()
-    rown += 1
+    check_discr = tk.Checkbutton(methods_frame, text='Discrete Wavelet Transform',
+                                 variable=check_discr_var, bg='#f5f6fa',
+                                 font=('Segoe UI', 9))
+    # check_discr.pack(anchor='w', pady=2)  # Still commented out
 
-    # Normalization
-    normalization_label = tk.Label(top, text='Normalization')
-    normalization_label.grid(row=rown, column=0, sticky='w')
-    rown += 1
+    check_corre = tk.Checkbutton(methods_frame, text='Correlation',
+                                 variable=check_corre_var, bg='#f5f6fa',
+                                 font=('Segoe UI', 9))
+    check_corre.pack(anchor='w', pady=2)
 
-    normalization_stat = tk.Radiobutton(top, text='Statistical', variable=normalization_var, value='Stat')
-    normalization_stat.grid(row=rown, column=0, sticky='w')
-    if normalization_var.get() == 'Stat':
-        normalization_stat.select()
-    else:
-        normalization_stat.deselect()
-    rown += 1
+    check_diff = tk.Checkbutton(methods_frame, text='Differentiation',
+                                variable=check_diff_var, bg='#f5f6fa',
+                                font=('Segoe UI', 9))
+    check_diff.pack(anchor='w', pady=2)
 
+    # Normalization Section
+    norm_frame = tk.LabelFrame(main_frame, text='Normalization',
+                               font=('Segoe UI', 10, 'bold'),
+                               bg='#f5f6fa', fg='#2c3e50',
+                               padx=15, pady=10)
+    norm_frame.pack(fill='x', pady=(0, 10))
 
-    normalization_max = tk.Radiobutton(top, text='MaxMin', variable=normalization_var, value='MaxMin')
-    normalization_max.grid(row=rown, column=0, sticky='w')
-    #radio button delelected by default
-    if normalization_var.get() == 'MaxMin':
-        normalization_max.select()
-    else:
-        normalization_max.deselect()
-    rown += 1
+    normalization_max = tk.Radiobutton(norm_frame, text='MaxMin Normalization',
+                                       variable=normalization_var, value='MaxMin',
+                                       bg='#f5f6fa', font=('Segoe UI', 9))
+    normalization_max.pack(anchor='w', pady=2)
 
-    list_results_label = tk.Label(top, text='List results')
-    list_results_label.grid(row=rown, column=0, sticky='w')
-    rown += 1
+    normalization_stat = tk.Radiobutton(norm_frame, text='Statistical Normalization',
+                                        variable=normalization_var, value='Stat',
+                                        bg='#f5f6fa', font=('Segoe UI', 9))
+    normalization_stat.pack(anchor='w', pady=2)
 
-    list_results = tk.Spinbox(top, from_=1, to=100, width=5, textvariable=list_results_var)
-    list_results.grid(row=rown, column=0, sticky='w')
-    rown += 1
+    # Filters Section
+    filters_frame = tk.LabelFrame(main_frame, text='Filters',
+                                  font=('Segoe UI', 10, 'bold'),
+                                  bg='#f5f6fa', fg='#2c3e50',
+                                  padx=15, pady=10)
+    filters_frame.pack(fill='x', pady=(0, 10))
 
-    # Filter tk.checkbutton
-    check_filter = tk.Checkbutton(top, text='Filter')
-    check_filter.grid(row=rown, column=0, sticky='w')
-    check_filter.config(variable=filter_var)
-    if USE_INDEXES["Filter"]:
-        check_filter.select()
-    rown += 1
+    check_filter = tk.Checkbutton(filters_frame, text='Apply Filter',
+                                  variable=filter_var, bg='#f5f6fa',
+                                  font=('Segoe UI', 9))
+    check_filter.pack(anchor='w', pady=2)
 
-    check_fluo_filter = tk.Checkbutton(top, text='Fluorescence Filter beta')
-    check_fluo_filter.grid(row=rown, column=0, sticky='w')
-    check_fluo_filter.config(variable=fluo_filter_var)
-    if USE_INDEXES["Fluo_filter"]:
-        check_fluo_filter.select()
-    rown += 1
+    check_fluo_filter = tk.Checkbutton(filters_frame, text='Fluorescence Filter (beta)',
+                                       variable=fluo_filter_var, bg='#f5f6fa',
+                                       font=('Segoe UI', 9))
+    check_fluo_filter.pack(anchor='w', pady=2)
 
-    # select folder
-    
-    folder_label = tk.Label(top, text= 'Database Folder: ').grid(row=rown, column=0)
-    folder_entry = tk.Entry(top)#.grid(row=0, column =1)
-    folder_entry.grid(row=rown, column =1)
+    # Results Section
+    results_frame = tk.LabelFrame(main_frame, text='Results',
+                                  font=('Segoe UI', 10, 'bold'),
+                                  bg='#f5f6fa', fg='#2c3e50',
+                                  padx=15, pady=10)
+    results_frame.pack(fill='x', pady=(0, 10))
+
+    results_inner = tk.Frame(results_frame, bg='#f5f6fa')
+    results_inner.pack(fill='x')
+
+    list_results_label = tk.Label(results_inner, text='Number of results:',
+                                   bg='#f5f6fa', font=('Segoe UI', 9))
+    list_results_label.pack(side='left', padx=(0, 10))
+
+    list_results = tk.Spinbox(results_inner, from_=1, to=100, width=10,
+                              textvariable=list_results_var,
+                              font=('Segoe UI', 9))
+    list_results.pack(side='left')
+
+    # Database Section
+    db_frame = tk.LabelFrame(main_frame, text='Database',
+                             font=('Segoe UI', 10, 'bold'),
+                             bg='#f5f6fa', fg='#2c3e50',
+                             padx=15, pady=10)
+    db_frame.pack(fill='x', pady=(0, 10))
+
+    folder_inner = tk.Frame(db_frame, bg='#f5f6fa')
+    folder_inner.pack(fill='x')
+
+    folder_label = tk.Label(folder_inner, text='Folder:', bg='#f5f6fa',
+                           font=('Segoe UI', 9))
+    folder_label.pack(side='left', padx=(0, 10))
+
+    folder_entry = tk.Entry(folder_inner, font=('Segoe UI', 9))
+    folder_entry.pack(side='left', fill='x', expand=True, padx=(0, 10))
     if USE_INDEXES["DB"]:
         folder_entry.insert(0, USE_INDEXES["DB"])
-    folder_button = tk.Button(top, text = "Browse", command= lambda: folder_entry.insert(0, filedialog.askdirectory())).grid(row=rown, column =2)
-    rown += 1
+    
+    def browse_folder():
+        folder = filedialog.askdirectory()
+        if folder:
+            folder_entry.delete(0, tk.END)
+            folder_entry.insert(0, folder)
+        top.lift()
+        top.focus_set()
+    
+    folder_button = tk.Button(folder_inner, text="Browse", command=browse_folder,
+                             font=('Segoe UI', 9), bg='#3498db', fg='white',
+                             relief='flat', padx=15, pady=3)
+    folder_button.pack(side='left')
 
+    # Data for callbacks
+    data = [check_norm_corr_var, check_conv_var, check_fft_conv_var, check_hqi_var, 
+            check_discr_var, check_corre_var, check_diff_var, normalization_var, 
+            list_results_var, filter_var, fluo_filter_var, folder_entry]
+    boxes = [check_norm_corr, check_conv, check_fft_conv, check_hqi, check_discr, 
+             check_corre, check_diff, normalization_stat, normalization_max, 
+             list_results, list_results, check_filter, check_fluo_filter, 
+             folder_button, folder_entry]
 
-    # save the checks
-    data = [check_norm_corr_var, check_conv_var, check_fft_conv_var, check_hqi_var, check_discr_var, check_corre_var, check_diff_var, normalization_var, list_results_var, filter_var, fluo_filter_var, folder_entry]
-    boxes = [check_norm_corr, check_conv, check_fft_conv, check_hqi, check_discr, check_corre, check_diff, normalization_stat, normalization_max, list_results, list_results, check_filter, check_fluo_filter, folder_button, folder_entry]
+    # Buttons Section
+    button_frame = tk.Frame(main_frame, bg='#f5f6fa')
+    button_frame.pack(fill='x', pady=(10, 0))
 
-    # clear button
-    clear_button = tk.Button(top, text='Clear', command=lambda : clear_checks(boxes))
-    clear_button.grid(row=16, column=0)
+    clear_button = tk.Button(button_frame, text='Clear', 
+                            command=lambda: clear_checks(boxes),
+                            font=('Segoe UI', 9), bg='#7f8c8d', fg='white',
+                            relief='flat', padx=20, pady=8)
+    clear_button.pack(side='left', padx=(0, 5))
 
-    #close button
+    load_button = tk.Button(button_frame, text='Load Config',
+                           command=lambda: load_configuration(top, root),
+                           font=('Segoe UI', 9), bg='#95a5a6', fg='white',
+                           relief='flat', padx=20, pady=8)
+    load_button.pack(side='left', padx=5)
 
-    close_button = tk.Button(top, text='Use', command=lambda : use_config(top, data))
-    close_button.grid(row=16, column=1)
+    save_button = tk.Button(button_frame, text='Save Config',
+                           command=lambda: save_configuration(data),
+                           font=('Segoe UI', 9), bg='#95a5a6', fg='white',
+                           relief='flat', padx=20, pady=8)
+    save_button.pack(side='left', padx=5)
 
-    save_button = tk.Button(top, text='Save', command=lambda : save_configuration(data))
-    save_button.grid(row=16, column=2)
-
-    load_button = tk.Button(top, text='Load', command=lambda : load_configuration(top, root))
-    load_button.grid(row=16, column=3)
+    close_button = tk.Button(button_frame, text='Apply',
+                            command=lambda: use_config(top, data),
+                            font=('Segoe UI', 9, 'bold'), bg='#3498db', fg='white',
+                            relief='flat', padx=25, pady=8)
+    close_button.pack(side='right')
 
 def loading_window(event):
     global OPEN_LOADING
     OPEN_LOADING = True
     
     top = tk.Tk()
-    top.title('Loading')
-    top.geometry('300x200')
-    top.resizable(0, 0)
-
-    text = tk.Label(top, text='Loading')
-    #centet the text
+    top.title('Processing')
+    top.geometry('380x220')
+    top.resizable(False, False)
+    
+    # Center the window on screen
+    top.update_idletasks()
+    width = top.winfo_width()
+    height = top.winfo_height()
+    x = (top.winfo_screenwidth() // 2) - (width // 2)
+    y = (top.winfo_screenheight() // 2) - (height // 2)
+    top.geometry(f'{width}x{height}+{x}+{y}')
+    
+    # Main frame with modern styling
+    main_frame = tk.Frame(top, bg='#f5f6fa', padx=40, pady=35)
+    main_frame.pack(fill='both', expand=True)
+    
+    # Icon
+    icon_label = tk.Label(main_frame, text='⚡', 
+                          font=('Segoe UI', 36), 
+                          bg='#f5f6fa', fg='#3498db')
+    icon_label.pack(pady=(0, 12))
+    
+    # Animated text
+    text = tk.Label(main_frame, text='Processing', 
+                   font=('Segoe UI', 12, 'bold'), 
+                   bg='#f5f6fa', fg='#2c3e50')
     text.pack()
+    
+    # Animation characters
     giro = ["⢿", "⣻", "⣽", "⣾", "⣷", "⣯", "⣟", "⡿"]
+    
     while not event.is_set():
         top.grab_set()
         top.focus_set()
         top.focus_force()
         top.update()
-        # rotating text
 
         for i in range(8):
-            text['text']  = 'Loading ' + giro[i]
+            text['text'] = 'Processing ' + giro[i]
             top.update()
             time.sleep(0.2)
         time.sleep(0.1)
@@ -321,6 +431,18 @@ def loading_window(event):
 def start(root):
     if OPEN_CONFIG or OPEN_LOAD or OPEN_SAVE:
         error_message(root, 'Please close the other windows first')
+        return
+    continuation = False
+    for index in USE_INDEXES:
+        if index in LIST_FIGURES:
+            if not USE_INDEXES[index]:
+                pass
+            else:
+                continuation = True
+    if continuation:
+        pass
+    else:
+        error_message(root, f'Please select at least one analysis method') 
         return
     event = th.Event()
     thread = th.Thread(target=loading_window, args=(event,))
@@ -385,40 +507,62 @@ def save_results(main_fin):
 def configuration_display(root):
 
     top = tk.Toplevel(root)
-    top.title('Configuration Display')
-    top.geometry('800x600')
-    top.resizable(0, 0)
+    top.title('Display Configuration')
+    top.geometry('350x220')
+    top.resizable(False, False)
+    top.transient(root)
     top.grab_set()
     top.focus_set()
-    top.focus_force()
 
-    fluo_filter_var = tk.IntVar()
-    fluo_filter_var.set(CONF_DIPLAY["fluo_filter"])
-    filter_var = tk.IntVar()
-    filter_var.set(CONF_DIPLAY["Filter"])
-    normalization_var = tk.StringVar()
-    normalization_var.set(CONF_DIPLAY["Normalization"])
+    # Variables
+    fluo_filter_var = tk.IntVar(value=CONF_DIPLAY["fluo_filter"])
+    filter_var = tk.IntVar(value=CONF_DIPLAY["Filter"])
+    normalization_var = tk.StringVar(value=CONF_DIPLAY["Normalization"])
 
-    #check boxes
-    check_norm_corr = tk.Checkbutton(top, text='Fluo Filter', variable=fluo_filter_var, onvalue=True, offvalue=False)
-    check_norm_corr.grid(row=0, column=0)
-    check_conv = tk.Checkbutton(top, text='Filter', variable=filter_var, onvalue=True, offvalue=False)
-    check_conv.grid(row=1, column=0)
+    # Main frame with padding
+    main_frame = tk.Frame(top, padx=20, pady=15)
+    main_frame.pack(fill='both', expand=True)
 
-    #radio buttons
-    normalization_stat = tk.Radiobutton(top, text='MinMax', variable=normalization_var, value='MinMax')
-    normalization_stat.grid(row=2, column=0)
-    normalization_stat = tk.Radiobutton(top, text='Stat', variable=normalization_var, value='Stat')
-    normalization_stat.grid(row=3, column=0)
+    # Filters section
+    filter_label = tk.Label(main_frame, text='Filters:', font=('Segoe UI', 10, 'bold'))
+    filter_label.grid(row=0, column=0, sticky='w', pady=(0, 5))
 
+    check_filter = tk.Checkbutton(main_frame, text='Apply Filter', variable=filter_var)
+    check_filter.grid(row=1, column=0, sticky='w', padx=20, pady=2)
 
-    load_button = tk.Button(top, text='Use', command=lambda : use_config_display(top, {"fluo_filter": fluo_filter_var.get(), 
-                                                                                "Filter": filter_var.get(), 
-                                                                                "Normalization": normalization_var.get()}))
-    load_button.grid(row=4, column=0)
+    check_fluo = tk.Checkbutton(main_frame, text='Fluorescence Filter', variable=fluo_filter_var)
+    check_fluo.grid(row=2, column=0, sticky='w', padx=20, pady=2)
 
-    close_button = tk.Button(top, text='Close', command=top.destroy)
-    close_button.grid(row=5, column=0)
+    # Separator
+    separator = tk.Frame(main_frame, height=2, bd=1, relief='sunken')
+    separator.grid(row=3, column=0, sticky='ew', pady=10)
+
+    # Normalization section
+    norm_label = tk.Label(main_frame, text='Normalization:', font=('Segoe UI', 10, 'bold'))
+    norm_label.grid(row=4, column=0, sticky='w', pady=(0, 5))
+
+    radio_minmax = tk.Radiobutton(main_frame, text='Min-Max Normalization', 
+                                   variable=normalization_var, value='MinMax')
+    radio_minmax.grid(row=5, column=0, sticky='w', padx=20, pady=2)
+
+    radio_stat = tk.Radiobutton(main_frame, text='Statistical Normalization', 
+                                variable=normalization_var, value='Stat')
+    radio_stat.grid(row=6, column=0, sticky='w', padx=20, pady=2)
+
+    # Button frame
+    button_frame = tk.Frame(main_frame)
+    button_frame.grid(row=7, column=0, pady=(15, 0))
+
+    use_button = tk.Button(button_frame, text='Apply', width=10,
+                          command=lambda: use_config_display(top, {
+                              "fluo_filter": fluo_filter_var.get(),
+                              "Filter": filter_var.get(),
+                              "Normalization": normalization_var.get()
+                          }))
+    use_button.pack(side='left', padx=5)
+
+    close_button = tk.Button(button_frame, text='Cancel', width=10, command=top.destroy)
+    close_button.pack(side='left', padx=5)
 
 def use_config_display(top, config):
     global CONF_DIPLAY
