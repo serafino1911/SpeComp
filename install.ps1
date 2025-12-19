@@ -37,19 +37,19 @@ Write-Host "Checking for Python installation..." -ForegroundColor Yellow
 
 if (Test-PythonInstalled) {
     $version = Get-PythonVersion
-    Write-Host "✓ Python found: " -ForegroundColor Green -NoNewline
+    Write-Host "[OK] Python found: " -ForegroundColor Green -NoNewline
     python --version
     
     # Check if version is 3.7 or higher
     if ($version -lt [version]"3.7") {
-        Write-Host "✗ Python version is too old. Python 3.7 or higher is required." -ForegroundColor Red
+        Write-Host "[ERROR] Python version is too old. Python 3.7 or higher is required." -ForegroundColor Red
         Write-Host "Please download and install Python from: https://www.python.org/downloads/" -ForegroundColor Yellow
         Write-Host "Make sure to check 'Add Python to PATH' during installation!" -ForegroundColor Yellow
         Read-Host "Press Enter to exit"
         exit 1
     }
 } else {
-    Write-Host "✗ Python is not installed or not in PATH" -ForegroundColor Red
+    Write-Host "[ERROR] Python is not installed or not in PATH" -ForegroundColor Red
     Write-Host ""
     Write-Host "Would you like to download Python installer? (Y/N)" -ForegroundColor Yellow
     $response = Read-Host
@@ -78,16 +78,16 @@ Write-Host ""
 Write-Host "Checking for pip..." -ForegroundColor Yellow
 try {
     $pipVersion = pip --version 2>&1
-    Write-Host "✓ pip found: $pipVersion" -ForegroundColor Green
+    Write-Host "[OK] pip found: $pipVersion" -ForegroundColor Green
 } catch {
-    Write-Host "✗ pip not found. Installing pip..." -ForegroundColor Red
+    Write-Host "[ERROR] pip not found. Installing pip..." -ForegroundColor Red
     python -m ensurepip --upgrade
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "✗ Failed to install pip" -ForegroundColor Red
+        Write-Host "[ERROR] Failed to install pip" -ForegroundColor Red
         Read-Host "Press Enter to exit"
         exit 1
     }
-    Write-Host "✓ pip installed successfully" -ForegroundColor Green
+    Write-Host "[OK] pip installed successfully" -ForegroundColor Green
 }
 
 Write-Host ""
@@ -99,9 +99,9 @@ if (Test-Path ".venv") {
 } else {
     python -m venv .venv
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ Virtual environment created" -ForegroundColor Green
+        Write-Host "[OK] Virtual environment created" -ForegroundColor Green
     } else {
-        Write-Host "✗ Failed to create virtual environment" -ForegroundColor Red
+        Write-Host "[ERROR] Failed to create virtual environment" -ForegroundColor Red
         Read-Host "Press Enter to exit"
         exit 1
     }
@@ -126,15 +126,15 @@ if (Test-Path "requirements.txt") {
     pip install -r requirements.txt
     
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ All dependencies installed successfully" -ForegroundColor Green
+        Write-Host "[OK] All dependencies installed successfully" -ForegroundColor Green
     } else {
-        Write-Host "✗ Failed to install some dependencies" -ForegroundColor Red
+        Write-Host "[ERROR] Failed to install some dependencies" -ForegroundColor Red
         Write-Host "Please check the error messages above" -ForegroundColor Yellow
         Read-Host "Press Enter to exit"
         exit 1
     }
 } else {
-    Write-Host "✗ requirements.txt not found!" -ForegroundColor Red
+    Write-Host "[ERROR] requirements.txt not found!" -ForegroundColor Red
     Read-Host "Press Enter to exit"
     exit 1
 }
@@ -177,9 +177,9 @@ if errorlevel 1 (
 Set-Content -Path "launch.bat" -Value $launcherContent -Encoding ASCII
 
 if (Test-Path "launch.bat") {
-    Write-Host "✓ Launcher created: launch.bat" -ForegroundColor Green
+    Write-Host "[OK] Launcher created: launch.bat" -ForegroundColor Green
 } else {
-    Write-Host "✗ Failed to create launcher" -ForegroundColor Red
+    Write-Host "[ERROR] Failed to create launcher" -ForegroundColor Red
 }
 
 Write-Host ""
@@ -191,7 +191,7 @@ $directories = @("data\DB", "data\Unknown", "data\Results", "reports\figures")
 foreach ($dir in $directories) {
     if (-not (Test-Path $dir)) {
         New-Item -ItemType Directory -Path $dir -Force | Out-Null
-        Write-Host "✓ Created directory: $dir" -ForegroundColor Green
+        Write-Host "[OK] Created directory: $dir" -ForegroundColor Green
     } else {
         Write-Host "Directory already exists: $dir" -ForegroundColor Cyan
     }
