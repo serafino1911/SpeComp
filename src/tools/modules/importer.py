@@ -12,3 +12,4 @@ from tkinter import filedialog
 import threading as th
 import time
 from matplotlib.widgets import Button
+import csv

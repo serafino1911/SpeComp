@@ -40,9 +40,6 @@ USE_INDEXES = {"NORM_CORR": False,
 LIST_BOOL = ["NORM_CORR", "CONV", "FFT_CONV", "HQI", "DISCR", "CORRE", "DIFF", "Filter"]
 LIST_FIGURES = ["NORM_CORR", "CONV", "FFT_CONV", "HQI", "DISCR", "CORRE", "DIFF"]
 
-def hello():
-    print('hello!')
-
 def clear_checks(data):
     for check in data:
         if isinstance(check, tk.Checkbutton):
@@ -53,47 +50,28 @@ def clear_checks(data):
             check.delete(0, 10)
 
 def use_config(root, data):
-    global OPEN_CONFIG
-    global USE_INDEXES
-    USE_INDEXES["NORM_CORR"] = data[0].get()
-    USE_INDEXES["CONV"] = data[1].get()
-    USE_INDEXES["FFT_CONV"] = data[2].get()
-    USE_INDEXES["HQI"] = data[3].get()
-    USE_INDEXES["DISCR"] = data[4].get()
-    USE_INDEXES["CORRE"] = data[5].get()
-    USE_INDEXES["DIFF"] = data[6].get()
-    USE_INDEXES["Normalization"] = data[7].get()
-    USE_INDEXES["List_results"] = data[8].get()
-    USE_INDEXES["Filter"] = data[9].get()  
-    USE_INDEXES["Fluo_filter"] = data[10].get()
-    USE_INDEXES["DB"] = data[11].get()  
+    global OPEN_CONFIG, USE_INDEXES
+    keys = ["NORM_CORR", "CONV", "FFT_CONV", "HQI", "DISCR", "CORRE", "DIFF", 
+            "Normalization", "List_results", "Filter", "Fluo_filter", "DB"]
+    for i, key in enumerate(keys):
+        USE_INDEXES[key] = data[i].get()
     root.destroy()
     OPEN_CONFIG = False
-    #print the value of the checks
 
 def save_configuration(data):
-    global OPEN_CONFIG, OPEN_SAVE
-    global USE_INDEXES
+    global OPEN_CONFIG, OPEN_SAVE, USE_INDEXES
     OPEN_SAVE = True
-    USE_INDEXES["NORM_CORR"] = data[0].get()
-    USE_INDEXES["CONV"] = data[1].get()
-    USE_INDEXES["FFT_CONV"] = data[2].get()
-    USE_INDEXES["HQI"] = data[3].get()
-    USE_INDEXES["DISCR"] = data[4].get()
-    USE_INDEXES["CORRE"] = data[5].get()
-    USE_INDEXES["DIFF"] = data[6].get()
-    USE_INDEXES["Normalization"] = data[7].get()
-    USE_INDEXES["List_results"] = data[8].get()
-    USE_INDEXES["Filter"] = data[9].get()   
-    USE_INDEXES["DB"] = data[10].get()
-
-    #open a path to save the configuration
-    path = filedialog.asksaveasfilename(initialdir = BASE_DIR, title = "Select file",filetypes = (("cnf files","*.cnf"),("all files","*.*"))) 
+    keys = ["NORM_CORR", "CONV", "FFT_CONV", "HQI", "DISCR", "CORRE", "DIFF", 
+            "Normalization", "List_results", "Filter", "DB"]
+    for i, key in enumerate(keys):
+        USE_INDEXES[key] = data[i].get()
+    
+    path = filedialog.asksaveasfilename(initialdir=BASE_DIR, title="Select file",
+                                        filetypes=(("cnf files","*.cnf"),("all files","*.*"))) 
     if path:
         with open(path + '.cnf', 'w') as file:
             file.write(str(USE_INDEXES))
     OPEN_SAVE = False
-    #print the value of the checks
 
 def error_message(root, message, title = 'Error'):
     top = tk.Toplevel(root)
@@ -461,48 +439,163 @@ def start(root):
 
 def show_results(root, main_fin):
     top = tk.Toplevel(root)
-    top.title('Results')
-    top.geometry('800x600')
+    top.title('Analysis Results - SpeComp')
+    top.geometry('900x650')
     top.resizable(1, 1)
+    top.configure(bg='#f5f6fa')
+    top.transient(root)
     top.grab_set()
     top.focus_set()
     top.focus_force()
 
+    # Header frame
+    header_frame = tk.Frame(top, bg='#f5f6fa', padx=20, pady=15)
+    header_frame.pack(fill='x')
+
+    title_label = tk.Label(header_frame, text='📊 Analysis Results', 
+                          font=('Segoe UI', 16, 'bold'),
+                          bg='#f5f6fa', fg='#2c3e50')
+    title_label.pack(anchor='w')
+
+    subtitle_label = tk.Label(header_frame, text='Database comparison results ranked by similarity',
+                             font=('Segoe UI', 9),
+                             bg='#f5f6fa', fg='#7f8c8d')
+    subtitle_label.pack(anchor='w', pady=(2, 0))
+
+    # Separator
+    separator = tk.Frame(top, height=2, bg='#bdc3c7')
+    separator.pack(fill='x', padx=20)
+
+    # Main content frame with padding
+    content_frame = tk.Frame(top, bg='#f5f6fa', padx=20, pady=15)
+    content_frame.pack(fill='both', expand=True)
+
     # create a Frame for the Text and Scrollbar
-    txt_frm = tk.Frame(top)
+    txt_frm = tk.Frame(content_frame, bg='#ffffff', relief='solid', bd=1)
     txt_frm.pack(fill='both', expand=True)
-    # ensure a consistent GUI size
-    txt_frm.grid_propagate(False)
-    # implement stretchability
     txt_frm.grid_rowconfigure(0, weight=1)
     txt_frm.grid_columnconfigure(0, weight=1)
 
-    # create a Text widget
-    txt = tk.Text(txt_frm, borderwidth=3, relief='sunken')
-    txt.grid(row=0, column=0, sticky='nsew', padx=2, pady=2)
+    # create a Text widget with modern styling
+    txt = tk.Text(txt_frm, 
+                  borderwidth=0, 
+                  relief='flat',
+                  font=('Consolas', 9),
+                  bg='#ffffff',
+                  fg='#2c3e50',
+                  wrap='none',
+                  padx=15,
+                  pady=10)
+    txt.grid(row=0, column=0, sticky='nsew')
 
-    # create a Scrollbar and associate it with txt
+    # create a Scrollbar with better styling
     scrollb = tk.Scrollbar(txt_frm, command=txt.yview)
     scrollb.grid(row=0, column=1, sticky='nsew')
     txt['yscrollcommand'] = scrollb.set
+
+    # Configure text tags for better formatting
+    txt.tag_configure('algorithm', font=('Segoe UI', 10, 'bold'), foreground='#2980b9')
+    txt.tag_configure('rank', foreground='#27ae60')
+    txt.tag_configure('score', foreground='#e67e22')
+
+    # Insert formatted results
     for key, lista in main_fin.items():
-            txt.insert('end',f'{key}: \n\t' + '\n\t'.join( [ str(val[0]).replace('/', '\\\\') + ' = ' + str(val[1]) for val in lista] ) + ' \n\n')
+        txt.insert('end', f'● {key}\n', 'algorithm')
+        for rank, (filepath, score) in enumerate(lista, start=1):
+            filename = filepath.replace('/', '\\\\')
+            only_filename = os.path.basename(filename)
+            txt.insert('end', f'  {rank}. ', 'rank')
+            txt.insert('end', f'{only_filename} ')
+            txt.insert('end', f'(Score: {score:.4f})\n', 'score')
+        txt.insert('end', '\n')
+    
     txt.config(state='disabled')
 
-    # close button
-    close_button = tk.Button(top, text='Close', command=top.destroy)
-    close_button.pack(side='bottom')
+    # Button frame with modern styling
+    button_frame = tk.Frame(top, bg='#f5f6fa', pady=15)
+    button_frame.pack(side='bottom', fill='x', padx=20)
 
-    save_button = tk.Button(top, text='Save', command=lambda : save_results(main_fin))
-    save_button.pack(side='bottom')
+    # Center the buttons
+    button_container = tk.Frame(button_frame, bg='#f5f6fa')
+    button_container.pack()
+
+    # Save buttons with modern styling
+    save_txt_button = tk.Button(button_container, text='💾 Save as TXT', 
+                                command=lambda: save_results(main_fin),
+                                font=('Segoe UI', 9),
+                                bg='#95a5a6', fg='white',
+                                relief='flat', padx=20, pady=8,
+                                cursor='hand2')
+    save_txt_button.pack(side='left', padx=5)
+
+    save_csv_button = tk.Button(button_container, text='📊 Save as CSV', 
+                                command=lambda: save_results_csv(main_fin),
+                                font=('Segoe UI', 9),
+                                bg='#27ae60', fg='white',
+                                relief='flat', padx=20, pady=8,
+                                cursor='hand2')
+    save_csv_button.pack(side='left', padx=5)
+
+    # Close button
+    close_button = tk.Button(button_container, text='✖ Close', 
+                            command=top.destroy,
+                            font=('Segoe UI', 9),
+                            bg='#e74c3c', fg='white',
+                            relief='flat', padx=25, pady=8,
+                            cursor='hand2')
+    close_button.pack(side='left', padx=5)
+
+    # Add hover effects
+    def on_enter(e, btn, color):
+        btn['background'] = color
+
+    def on_leave(e, btn, color):
+        btn['background'] = color
+
+    save_txt_button.bind("<Enter>", lambda e: on_enter(e, save_txt_button, '#7f8c8d'))
+    save_txt_button.bind("<Leave>", lambda e: on_leave(e, save_txt_button, '#95a5a6'))
+    
+    save_csv_button.bind("<Enter>", lambda e: on_enter(e, save_csv_button, '#229954'))
+    save_csv_button.bind("<Leave>", lambda e: on_leave(e, save_csv_button, '#27ae60'))
+    
+    close_button.bind("<Enter>", lambda e: on_enter(e, close_button, '#c0392b'))
+    close_button.bind("<Leave>", lambda e: on_leave(e, close_button, '#e74c3c'))
 
     return
 
 def save_results(main_fin): 
     file = filedialog.asksaveasfilename(initialdir = BASE_DIR, title = "Select file", filetypes = (("txt files","*.txt"),("all files","*.*")))
-    with open(file.replace('.txt', '') + '.txt', 'w') as f:
-        for key, lista in main_fin.items():
-            f.write(f'{key}: \n\t' + '\n\t'.join( [ str(val[0]).replace('/', '\\\\') + ' = ' + str(val[1]) for val in lista] ) + ' \n\n')
+    if file:
+        with open(file.replace('.txt', '') + '.txt', 'w') as f:
+            db_link = USE_INDEXES["DB"] if USE_INDEXES["DB"] else "Not specified"
+            f.write(f'Database folder: {db_link}\n\n')
+            for key, lista in main_fin.items():
+                #only_filename = [ os.path.basename(val[0]) for val in lista ]
+                f.write(f'Algorithm: {key}\n')
+                for rank, (filepath, score) in enumerate(lista, start=1):
+                    filename = filepath.replace('/', '\\\\')
+                    only_filename = os.path.basename(filename)
+                    f.write(f'  {rank}. {only_filename} (Score: {score:.4f})\n')
+                #f.write(f'{key}: \n\t' + '\n\t'.join( [ str(val[0]).replace('/', '\\\\') + ' = ' + str(val[1]) for val in lista] ) + ' \n\n')
+
+def save_results_csv(main_fin):
+    """Save results to CSV format"""
+    file = filedialog.asksaveasfilename(
+        initialdir=BASE_DIR, 
+        title="Save as CSV", 
+        defaultextension=".csv",
+        filetypes=(("CSV files", "*.csv"), ("all files", "*.*"))
+    )
+    if file:
+        with open(file, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            # Write header
+            writer.writerow(['Algorithm', 'Rank', 'Database', 'Spectrum', 'Score'])
+            
+            # Write data
+            for algorithm, results_list in main_fin.items():
+                for rank, (filepath, score) in enumerate(results_list, start=1):
+                    writer.writerow([algorithm, rank, os.path.dirname(filepath), os.path.basename(filepath), score])
 
 def configuration_display(root):
 
@@ -613,6 +706,13 @@ def clear_list(file_list : list):
                 continue
             if '=' in file:
                 file = file.split('=')[0]
+            if not os.path.isfile(file):
+                filum = file.split()
+                for fi in filum:
+                    if '.txt' in fi:
+                        file = fi
+                        break
+                file = os.path.join(USE_INDEXES["DB"], file)
             try:
                 file = file.replace('\t', '')
                 if file[-1] == ' ':
@@ -1091,6 +1191,12 @@ def display_subtraction():
     plt.show()
 
 def display_files2(file_list, n=3, start_idx=0):
+    if not WORKING_FILE:
+        error_message(tk.Tk(), 'No working file loaded')
+        return
+    if not file_list or len(file_list) == 0:
+        error_message(tk.Tk(), 'No files to display')
+        return
     files = clear_list(file_list)
     global ax, fig
     
@@ -1157,38 +1263,192 @@ def display_files2(file_list, n=3, start_idx=0):
 
 
 def display_filex(root):
-    if FILE_LOADED:
-    # box where user can paste the files
-        top = tk.Toplevel(root)
-        top.title('Files to display')
-        top.geometry('400x400')
-        top.resizable(True, True)
+    global WORKING_FILE, USE_INDEXES
+    top = tk.Toplevel(root)
+    top.title('Display Multiple Spectra - SpeComp')
+    top.geometry('600x700')
+    top.resizable(True, True)
+    top.configure(bg='#f5f6fa')
+    top.transient(root)
+    top.grab_set()
 
-        # create a Frame for the Text and Scrollbar
-        txt_frm = tk.Frame(top)
-        txt_frm.pack(fill='both', expand=True)
-        # ensure a consistent GUI size
-        txt_frm.grid_propagate(False)
-        # implement stretchability
-        txt_frm.grid_rowconfigure(0, weight=1)
-        txt_frm.grid_columnconfigure(0, weight=1)
-        # create a Text widget
-        txt = tk.Text(txt_frm, borderwidth=3, relief='sunken')
-        txt.grid(row=0, column=0, sticky='nsew', padx=2, pady=2)
+    # Header
+    header_frame = tk.Frame(top, bg='#f5f6fa', padx=15, pady=5)
+    header_frame.pack(fill='x')
+    
+    tk.Label(header_frame, text='📊 Display Multiple Spectra', 
+            font=('Segoe UI', 11, 'bold'), bg='#f5f6fa', fg='#2c3e50').pack(anchor='w')
 
-        # create a Scrollbar and associate it with txt
-        scrollb = tk.Scrollbar(txt_frm, command=txt.yview)
-        scrollb.grid(row=0, column=1, sticky='nsew')
-        txt['yscrollcommand'] = scrollb.set
+    tk.Frame(top, height=1, bg='#bdc3c7').pack(fill='x', padx=15)
 
-        #configuration button
-        conf_button = tk.Button(top, text='Config', command=lambda : configuration_display(top))
-        conf_button.pack(side='bottom')
+    # Main content
+    content_frame = tk.Frame(top, bg='#f5f6fa', padx=15, pady=8)
+    content_frame.pack(fill='both', expand=True)
 
-        display_button = tk.Button(top, text='Display', command=lambda : display_files2(txt.get('1.0', 'end').splitlines()))###
-        display_button.pack(side='bottom')
-    else:
-        error_message(root, 'First load a file')
+    # Working file section
+    work_frame = tk.LabelFrame(content_frame, text='Working File', font=('Segoe UI', 9, 'bold'),
+                               bg='#f5f6fa', fg='#2c3e50', padx=10, pady=5)
+    work_frame.pack(fill='x', pady=(0, 8))
+    
+    work_entry = tk.Entry(work_frame, font=('Segoe UI', 8), fg='#2c3e50')
+    work_entry.pack(side='left', fill='x', expand=True, padx=(0, 5))
+    work_entry.insert(0, WORKING_FILE if WORKING_FILE else '')
+    
+    def browse_working():
+        global X, Y, WORKING_FILE, FILE_LOADED
+        file = filedialog.askopenfilename(initialdir=os.path.dirname(WORKING_FILE) if WORKING_FILE else BASE_DIR,
+                                         title='Select Working File', filetypes=[('Text files', '*.txt'), ('All files', '*.*')])
+        if file:
+            WORKING_FILE = file
+            FILE_LOADED = True
+            x, y = load_data(file)
+            X, Y = x, y
+            work_entry.delete(0, 'end')
+            work_entry.insert(0, file)
+    
+    tk.Button(work_frame, text='📂', command=browse_working, font=('Segoe UI', 8),
+             bg='#3498db', fg='white', relief='flat', padx=8, pady=2, cursor='hand2').pack(side='left')
+
+    # Database section
+    db_frame = tk.LabelFrame(content_frame, text='Database Folder', font=('Segoe UI', 9, 'bold'),
+                            bg='#f5f6fa', fg='#2c3e50', padx=10, pady=5)
+    db_frame.pack(fill='x', pady=(0, 8))
+    
+    db_entry = tk.Entry(db_frame, font=('Segoe UI', 8), fg='#2c3e50')
+    db_entry.pack(side='left', fill='x', expand=True, padx=(0, 5))
+    db_entry.insert(0, USE_INDEXES["DB"] if USE_INDEXES["DB"] else '')
+    
+    def browse_db():
+        folder = filedialog.askdirectory(initialdir=USE_INDEXES["DB"] if USE_INDEXES["DB"] else BASE_DIR,
+                                        title='Select Database Folder')
+        if folder:
+            USE_INDEXES["DB"] = folder
+            db_entry.delete(0, 'end')
+            db_entry.insert(0, folder)
+    
+    tk.Button(db_frame, text='📁', command=browse_db, font=('Segoe UI', 8),
+             bg='#3498db', fg='white', relief='flat', padx=8, pady=2, cursor='hand2').pack(side='left')
+
+    # Spectra list section
+    spec_frame = tk.LabelFrame(content_frame, text='Spectra to Display', font=('Segoe UI', 9, 'bold'),
+                               bg='#f5f6fa', fg='#2c3e50', padx=8, pady=5)
+    spec_frame.pack(fill='both', expand=True, pady=(0, 5))
+
+    tk.Label(spec_frame, text='💡 Paste paths, drag & drop files, or browse results',
+            font=('Segoe UI', 8), bg='#f5f6fa', fg='#3498db').pack(anchor='w', pady=(0, 3))
+
+    # Parse results file function
+    def parse_results_file(filepath):
+        paths = []
+        try:
+            if filepath.lower().endswith('.csv'):
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    reader = csv.reader(f)
+                    next(reader)
+                    for row in reader:
+                        if len(row) >= 4:
+                            full_path = os.path.join(row[2], row[3])
+                            if os.path.exists(full_path):
+                                paths.append(full_path)
+            elif filepath.lower().endswith('.txt'):
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    db_path = None
+                    # First, try to find the database folder path
+                    content = f.read()
+                    f.seek(0)
+                    
+                    for line in content.split('\n'):
+                        if line.strip().startswith('Database folder:'):
+                            db_path = line.split('Database folder:', 1)[1].strip()
+                            break
+                    
+                    # Parse spectrum lines
+                    for line in content.split('\n'):
+                        line_stripped = line.strip()
+                        # Look for lines like "  1. filename.txt (Score: 28.0050)"
+                        if '(Score:' in line_stripped and '. ' in line_stripped:
+                            # Remove the rank number (e.g., "1. ")
+                            parts = line_stripped.split('. ', 1)
+                            if len(parts) >= 2:
+                                # Extract filename (everything before " (Score:")
+                                filename_part = parts[1].split(' (Score:')[0].strip()
+                                
+                                if db_path and filename_part:
+                                    full_path = os.path.join(db_path, filename_part)
+                                    if os.path.exists(full_path):
+                                        paths.append(full_path)
+        except Exception as e:
+            error_message(top, f'Error parsing file: {str(e)}')
+        return paths
+
+    def browse_results():
+        file = filedialog.askopenfilename(initialdir=BASE_DIR, title='Select Results File',
+                                         filetypes=[('Results files', '*.txt *.csv'), ('All files', '*.*')])
+        if file:
+            paths = parse_results_file(file)
+            if paths:
+                txt.delete('1.0', 'end')
+                txt.insert('1.0', '\n'.join(paths))
+            else:
+                error_message(top, 'No valid spectrum paths found in file')
+
+    # Buttons row
+    btn_frame = tk.Frame(spec_frame, bg='#f5f6fa')
+    btn_frame.pack(fill='x', pady=(0, 5))
+    
+    tk.Button(btn_frame, text='📁 Load Results File', command=browse_results, font=('Segoe UI', 8),
+             bg='#3498db', fg='white', relief='flat', padx=10, pady=3, cursor='hand2').pack(side='left', padx=(0, 5))
+
+    conf_btn = tk.Button(btn_frame, text='⚙️ Config', command=lambda: configuration_display(top),
+                        font=('Segoe UI', 8), bg='#95a5a6', fg='white', relief='flat', 
+                        padx=10, pady=3, cursor='hand2')
+    conf_btn.pack(side='left', padx=5)
+
+    display_btn = tk.Button(btn_frame, text='📈 Display', 
+                           command=lambda: display_files2(txt.get('1.0', 'end').splitlines()),
+                           font=('Segoe UI', 8, 'bold'), bg='#3498db', fg='white', 
+                           relief='flat', padx=15, pady=3, cursor='hand2')
+    display_btn.pack(side='left', padx=5)
+
+    # Hover effects
+    conf_btn.bind("<Enter>", lambda e: conf_btn.config(bg='#7f8c8d'))
+    conf_btn.bind("<Leave>", lambda e: conf_btn.config(bg='#95a5a6'))
+    display_btn.bind("<Enter>", lambda e: display_btn.config(bg='#2980b9'))
+    display_btn.bind("<Leave>", lambda e: display_btn.config(bg='#3498db'))
+
+    # Text area
+    txt_frm = tk.Frame(spec_frame, bg='#ffffff', relief='solid', bd=1)
+    txt_frm.pack(fill='both', expand=True)
+    txt_frm.grid_rowconfigure(0, weight=1)
+    txt_frm.grid_columnconfigure(0, weight=1)
+
+    txt = tk.Text(txt_frm, borderwidth=0, relief='flat', font=('Consolas', 8),
+                 bg='#ffffff', fg='#2c3e50', wrap='none', padx=8, pady=8, height=6)
+    txt.grid(row=0, column=0, sticky='nsew')
+
+    scrollb = tk.Scrollbar(txt_frm, command=txt.yview)
+    scrollb.grid(row=0, column=1, sticky='nsew')
+    txt['yscrollcommand'] = scrollb.set
+
+    # Drag and drop
+    def on_drop(event):
+        for file in top.tk.splitlist(event.data):
+            file = file.strip('{}')
+            if file.lower().endswith(('.txt', '.csv')):
+                paths = parse_results_file(file)
+                if paths:
+                    if txt.get('1.0', 'end').strip():
+                        txt.insert('end', '\n')
+                    txt.insert('end', '\n'.join(paths))
+            else:
+                if txt.get('1.0', 'end').strip():
+                    txt.insert('end', '\n')
+                txt.insert('end', file)
+
+    txt_frm.drop_target_register('DND_Files')
+    txt_frm.dnd_bind('<<Drop>>', on_drop)
+    txt.drop_target_register('DND_Files')
+    txt.dnd_bind('<<Drop>>', on_drop)
 
 def up_menu(root, file_box):
     menu = tk.Menu(root)
